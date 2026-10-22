@@ -1,0 +1,12 @@
+{
+  "id": "msg-003",
+  "received_at": "2026-10-12T10:30:00Z",
+  "channel": "email",
+  "from": {
+    "name": "Ana Cruz",
+    "email": "ana.cruz@example.net",
+    "phone": null
+  },
+  "subject": "Question about my last bill",
+  "body": "I was charged twice for my visit on 3 October. Could you check and refund the duplicate charge?"
+}

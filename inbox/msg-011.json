@@ -1,0 +1,12 @@
+{
+  "id": "msg-011",
+  "received_at": "2026-10-14T14:00:00Z",
+  "channel": "email",
+  "from": {
+    "name": "Ana Cruz",
+    "email": "ana.cruz@example.net",
+    "phone": null
+  },
+  "subject": "Patient portal login",
+  "body": "I can't log in to the patient portal, it says my account is locked."
+}

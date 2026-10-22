@@ -1,0 +1,13 @@
+{
+  "name": "leadflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "leadflow": "bun leadflow.ts",
+    "migrate": "bun migrate/index.ts",
+    "eval": "bun evals/run.ts",
+    "submit": "bun scripts/submit.ts",
+    "test": "bun test"
+  }
+}

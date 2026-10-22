@@ -1,0 +1,12 @@
+{
+  "id": "msg-004",
+  "received_at": "2026-10-12T13:45:00Z",
+  "channel": "email",
+  "from": {
+    "name": "Maria Santos",
+    "email": "maria.santos@example.com",
+    "phone": "+639171110001"
+  },
+  "subject": "Re: Pricing for annual check-up",
+  "body": "Thanks for the prices. Could we book both check-ups for the morning of 25 October?"
+}

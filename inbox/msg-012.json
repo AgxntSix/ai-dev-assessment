@@ -1,0 +1,12 @@
+{
+  "id": "msg-012",
+  "received_at": "2026-10-15T08:30:00Z",
+  "channel": "sms",
+  "from": {
+    "name": "Ben Aquino",
+    "email": null,
+    "phone": "+639171110012"
+  },
+  "subject": "Flu shots",
+  "body": "Do you have flu shots in stock? Want to bring my two kids this weekend."
+}

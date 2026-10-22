@@ -1,0 +1,12 @@
+{
+  "id": "msg-009",
+  "received_at": "2026-10-14T09:05:00Z",
+  "channel": "web_form",
+  "from": {
+    "name": "Sofia Mendoza",
+    "email": "sofia.mendoza@example.com",
+    "phone": "+639171110009"
+  },
+  "subject": "Prenatal care plans",
+  "body": "I'm 10 weeks pregnant and looking for a prenatal care plan. What do your packages include?"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "msg-010",
+  "received_at": "2026-10-14T10:48:00Z",
+  "channel": "email",
+  "from": {
+    "name": "Liam Tan",
+    "email": "liam.tan@example.org",
+    "phone": "+639171110005"
+  },
+  "subject": "Re: Physiotherapy sessions",
+  "body": "The quote looks fine. Is there a discount if I pay for all eight sessions up front?"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "msg-002",
+  "received_at": "2026-10-12T09:02:00Z",
+  "channel": "email",
+  "from": {
+    "name": "Jonah Reyes",
+    "email": "jonah.reyes@example.com",
+    "phone": "+639171110002"
+  },
+  "subject": "Corporate wellness package",
+  "body": "We are a 40-person logistics company looking at a corporate wellness package for our staff. Can someone send a proposal?"
+}

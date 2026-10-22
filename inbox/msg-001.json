@@ -1,0 +1,12 @@
+{
+  "id": "msg-001",
+  "received_at": "2026-10-12T08:14:00Z",
+  "channel": "web_form",
+  "from": {
+    "name": "Maria Santos",
+    "email": "maria.santos@example.com",
+    "phone": "+639171110001"
+  },
+  "subject": "Pricing for annual check-up",
+  "body": "Hi, I'd like to know how much an annual check-up costs for two adults, and whether you take walk-ins on Saturdays."
+}

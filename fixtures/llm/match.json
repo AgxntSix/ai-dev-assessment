@@ -1,0 +1,24 @@
+{
+  "fallback": {
+    "same_person": false,
+    "confidence": 0.2
+  },
+  "responses": {
+    "4298b3ccc9f0ef78": {
+      "same_person": true,
+      "confidence": 0.98
+    },
+    "605a11c2612fcbab": {
+      "same_person": true,
+      "confidence": 0.98
+    },
+    "614f39f178e80155": {
+      "same_person": true,
+      "confidence": 0.98
+    },
+    "cbe5cfdf7c2118a9": {
+      "same_person": false,
+      "confidence": 0.1
+    }
+  }
+}

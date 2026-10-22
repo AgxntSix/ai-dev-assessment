@@ -1,0 +1,69 @@
+{
+  "fallback": {
+    "stage": "new",
+    "owner": "dana",
+    "reason": "Default routing"
+  },
+  "responses": {
+    "4425a795764cebb3": {
+      "stage": "new",
+      "owner": "dana",
+      "reason": "First enquiry about pricing"
+    },
+    "58bc24d75e57eda3": {
+      "stage": "qualified",
+      "owner": "marcus",
+      "reason": "Corporate buyer asking for a proposal"
+    },
+    "5078a317571f58aa": {
+      "stage": "new",
+      "owner": "priya",
+      "reason": "Billing support request"
+    },
+    "e30a76f1634bc664": {
+      "stage": "qualified",
+      "owner": "dana",
+      "reason": "Ready to book"
+    },
+    "63d1859987709e9f": {
+      "stage": "new",
+      "owner": "priya",
+      "reason": "Service enquiry"
+    },
+    "0ecae7e67d2a6b7a": {
+      "stage": "proposal",
+      "owner": "marcus",
+      "reason": "Budget approved, wants proposal"
+    },
+    "f24a3b4a6a512654": {
+      "stage": "closed_won",
+      "owner": "marcus",
+      "reason": "Deal approved by clinic manager"
+    },
+    "7653258880540260": {
+      "stage": "new",
+      "owner": "priya",
+      "reason": "Appointment change"
+    },
+    "99f3456f2f3ff28b": {
+      "stage": "new",
+      "owner": "dana",
+      "reason": "Prenatal package enquiry"
+    },
+    "a8972cb981e1ac1a": {
+      "stage": "proposal",
+      "owner": "priya",
+      "reason": "Negotiating a quote"
+    },
+    "51cd1a2a454f5372": {
+      "stage": "new",
+      "owner": "priya",
+      "reason": "Portal access"
+    },
+    "779883da12033292": {
+      "stage": "new",
+      "owner": "dana",
+      "reason": "Vaccination enquiry"
+    }
+  }
+}

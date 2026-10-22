@@ -1,0 +1,12 @@
+{
+  "id": "msg-006",
+  "received_at": "2026-10-13T08:40:00Z",
+  "channel": "email",
+  "from": {
+    "name": "Jonah Reyes",
+    "email": "Jonah.Reyes@Example.com ",
+    "phone": "+63 917 111 0002"
+  },
+  "subject": "Re: Corporate wellness package",
+  "body": "Following up on the wellness proposal. Our budget is approved, can we get the draft by Friday?"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "msg-008",
+  "received_at": "2026-10-13T15:20:00Z",
+  "channel": "sms",
+  "from": {
+    "name": "Paolo Garcia",
+    "email": null,
+    "phone": "+639171110008"
+  },
+  "subject": "Reschedule",
+  "body": "Hi this is Paolo, I need to move my appointment on Thursday to next week please."
+}

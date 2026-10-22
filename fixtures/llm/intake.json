@@ -1,0 +1,56 @@
+{
+  "fallback": {
+    "category": "new_lead",
+    "summary": "Inbound enquiry"
+  },
+  "responses": {
+    "4425a795764cebb3": {
+      "category": "new_lead",
+      "summary": "Pricing for annual check-up"
+    },
+    "58bc24d75e57eda3": {
+      "category": "new_lead",
+      "summary": "Corporate wellness package"
+    },
+    "5078a317571f58aa": {
+      "category": "support",
+      "summary": "Question about my last bill"
+    },
+    "e30a76f1634bc664": {
+      "category": "follow_up",
+      "summary": "Re: Pricing for annual check-up"
+    },
+    "63d1859987709e9f": {
+      "category": "new_lead",
+      "summary": "Physiotherapy sessions"
+    },
+    "0ecae7e67d2a6b7a": {
+      "category": "follow_up",
+      "summary": "Re: Corporate wellness package"
+    },
+    "f24a3b4a6a512654": {
+      "category": "new_lead",
+      "summary": "Dental cleaning"
+    },
+    "7653258880540260": {
+      "category": "support",
+      "summary": "Reschedule"
+    },
+    "99f3456f2f3ff28b": {
+      "category": "new_lead",
+      "summary": "Prenatal care plans"
+    },
+    "a8972cb981e1ac1a": {
+      "category": "follow_up",
+      "summary": "Re: Physiotherapy sessions"
+    },
+    "51cd1a2a454f5372": {
+      "category": "support",
+      "summary": "Patient portal login"
+    },
+    "779883da12033292": {
+      "category": "new_lead",
+      "summary": "Flu shots"
+    }
+  }
+}
