@@ -1,0 +1,31 @@
+FullName,Email,Phone,DOB,Consent,Status,Notes
+Andrea Villanueva,andrea.villanueva@example.com,+639172000000,1950-01-01,Y,Active,
+Carlo Bautista,carlo.bautista@example.com,+639172000137,1957-02-06,Y,Active,Prefers morning appointments
+Bea Ramos,bea.ramos@example.com,+639172000274,1964-03-11,Y,Active,
+Daniel Navarro,daniel.navarro@example.com,+639172000411,1971-04-16,N,Active,Referred by Dr. Ocampo
+Elena Flores,elena.flores@example.com,+639172000548,1978-05-21,Y,Inactive,
+Felix Torres,felix.torres@example.com,+639172000685,1985-06-26,Y,Active,
+Gina Castillo,gina.castillo@example.com,+639172000822,1992-07-04,Y,Active,Annual physical due
+Hugo Aquino,hugo.aquino@example.com,+639172000959,1999-08-09,Y,Active,
+Iris Domingo,iris.domingo@example.com,+639172001096,1951-09-14,N,Active,Allergic to penicillin
+Jared Salazar,jared.salazar@example.com,+639172001233,1958-10-19,Y,Active,
+Karla Rivera,karla.rivera@example.com,+639172001370,1965-11-24,Y,Active,
+Leo Morales,leo.morales@example.com,+639172001507,1972-12-02,Y,Active,Speaks Tagalog and English
+Mila Pascual,mila.pascual@example.com,+639172001644,1979-01-07,Y,Active,
+Nico Gonzales,nico.gonzales@example.com,+639172001781,1986-02-12,N,Inactive,
+Olivia Del Rosario,olivia.delrosario@example.com,+639172001918,1993-03-17,Y,Active,Requested SMS reminders
+Paulo Manalo,paulo.manalo@example.com,+639172002055,2000-04-22,Y,Active,
+Quinn Ocampo,quinn.ocampo@example.com,+639172002192,1952-05-27,Y,Active,
+Rosa Soriano,rosa.soriano@example.com,+639172002329,1959-06-05,Y,Active,
+Sam Valdez,sam.valdez@example.com,+639172002466,1966-07-10,N,Active,Billing handled by employer
+Tessa Herrera,tessa.herrera@example.com,+639172002603,1973-08-15,Y,Active,
+Uriel Padilla,uriel.padilla@example.com,+639172002740,1980-09-20,Y,Active,
+Vera Santiago,vera.santiago@example.com,+639172002877,1987-10-25,Y,Active,
+Wes Mercado,wes.mercado@example.com,+639172003014,1994-11-03,Y,Inactive,New patient 2024
+Xenia Lopez,xenia.lopez@example.com,+639172003151,2001-12-08,N,Active,
+Yuri Aguilar,yuri.aguilar@example.com,+639172003288,1953-01-13,Y,Active,
+Zara Dizon,zara.dizon@example.com,+639172003425,1960-02-18,Y,Active,
+Arnel Cortez,arnel.cortez@example.com,+639172003562,1967-03-23,Y,Active,
+Bianca Ignacio,bianca.ignacio@example.com,+639172003699,1974-04-01,Y,Active,Asked about telehealth
+Cesar Tolentino,cesar.tolentino@example.com,+639172003836,1981-05-06,N,Active,
+Dina Galang,dina.galang@example.com,+639172003973,1988-06-11,Y,Active,
