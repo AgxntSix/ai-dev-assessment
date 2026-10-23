@@ -53,8 +53,14 @@ export function startFakeServer(): FakeServer {
       if (path === "/v1/answers") {
         return Response.json(body.ticket_id === "FINAL" ? { next_ticket: null, done: true } : { next_ticket: ticket("CR-1"), done: false });
       }
-      if (path === "/v1/video/upload-url") return Response.json({ upload_id: "up_1", upload_url: `${base}/upload/up_1`, headers: { "x-goog-test": "1" } });
-      if (path === "/v1/video/complete") return Response.json({ ok: true });
+      if (path === "/v1/video/upload-url") return Response.json({
+          upload_id: "up_1",
+          upload_url: `${base}/upload/up_1`,
+          method: "PUT",
+          headers: { "Content-Type": String(body.content_type), "x-goog-content-length-range": `0,${body.size_bytes}` },
+          expires_at: "2026-10-23T12:30:00Z",
+        });
+      if (path === "/v1/video/complete") return Response.json({ ok: true, upload_id: body.upload_id, size_bytes: 0 });
       return new Response("not found", { status: 404 });
     },
   });

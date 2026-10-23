@@ -240,6 +240,9 @@ function explain(err: unknown): string {
   if (err instanceof ApiError && err.status === null) {
     return `${err.message}\nCheck your connection and the server_url in .leadflow/candidate.json, then run bun run submit again. Nothing was lost.`;
   }
+  if (err instanceof ApiError && err.status === 429) {
+    return `${err.message}\nToo many video upload attempts today. Try again tomorrow, or use a Video: <link> line in WRITEUP.md.`;
+  }
   if (err instanceof ApiError && err.status === 401) {
     return `${err.message}\nYour candidate token was not accepted. Contact us rather than re-running setup.`;
   }

@@ -110,7 +110,7 @@ describe("FINAL video", () => {
     const puts = callsTo("/upload/up_1");
     expect(puts).toHaveLength(2);
     expect(puts[1]!.headers["content-type"]).toBe("video/mp4");
-    expect(puts[1]!.headers["x-goog-test"]).toBe("1");
+    expect(puts[1]!.headers["x-goog-content-length-range"]).toBe(`0,${bytes.length}`);
     expect(Buffer.from(puts[1]!.body as Uint8Array).equals(Buffer.from(bytes))).toBe(true);
     expect(callsTo("/v1/video/upload-url")[0]!.body).toEqual({ candidate_token: TOKEN, filename: "walkthrough.mp4", content_type: "video/mp4", size_bytes: bytes.length });
     expect(callsTo("/v1/video/complete")[0]!.body).toEqual({ candidate_token: TOKEN, upload_id: "up_1" });

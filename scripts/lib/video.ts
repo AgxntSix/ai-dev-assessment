@@ -22,15 +22,27 @@ export function checkVideoFile(path: string): VideoFile {
   return { path, filename: basename(path), content_type, size_bytes };
 }
 
-type UploadTarget = { upload_id: string; upload_url: string; headers: Record<string, string> };
+type UploadTarget = { upload_id: string; upload_url: string; method: string; headers: Record<string, string> };
 
 function parseTarget(value: unknown): UploadTarget {
-  const body = value as { upload_id?: unknown; upload_url?: unknown; headers?: unknown };
+  const body = value as { upload_id?: unknown; upload_url?: unknown; method?: unknown; headers?: unknown };
   if (typeof body?.upload_id !== "string" || typeof body.upload_url !== "string" || !/^https?:\/\//.test(body.upload_url)) {
     throw new Error("/v1/video/upload-url response is missing upload_id or upload_url");
   }
   const headers = typeof body.headers === "object" && body.headers !== null ? (body.headers as Record<string, string>) : {};
-  return { upload_id: body.upload_id, upload_url: body.upload_url, headers };
+  if (!Object.values(headers).every((v) => typeof v === "string")) throw new Error("/v1/video/upload-url sent non-string headers");
+  const method = typeof body.method === "string" ? body.method.toUpperCase() : "PUT";
+  return { upload_id: body.upload_id, upload_url: body.upload_url, method, headers };
+}
+
+// The signed URL covers the returned headers, so they are sent exactly as given.
+function uploadHeaders(video: VideoFile, target: UploadTarget): Record<string, string> {
+  const hasContentType = Object.keys(target.headers).some((name) => name.toLowerCase() === "content-type");
+  return {
+    ...(hasContentType ? {} : { "Content-Type": video.content_type }),
+    ...target.headers,
+    "Content-Length": String(video.size_bytes),
+  };
 }
 
 function progressStream(total: number, report: (line: string) => void): TransformStream<Uint8Array, Uint8Array> {
@@ -52,11 +64,14 @@ function progressStream(total: number, report: (line: string) => void): Transfor
 async function putOnce(video: VideoFile, target: UploadTarget, report: (line: string) => void): Promise<void> {
   const body = Bun.file(video.path).stream().pipeThrough(progressStream(video.size_bytes, report));
   const res = await fetch(target.upload_url, {
-    method: "PUT",
-    headers: { ...target.headers, "Content-Type": video.content_type, "Content-Length": String(video.size_bytes) },
+    method: target.method,
+    headers: uploadHeaders(video, target),
     body,
     duplex: "half",
   } as RequestInit);
+  if (res.status === 403) {
+    throw new ApiError("video upload was refused (HTTP 403). The upload link lasts 30 minutes; run bun run submit --video again for a fresh one.", 403);
+  }
   if (!res.ok) throw new ApiError(`video upload returned HTTP ${res.status}`, res.status);
 }
 
