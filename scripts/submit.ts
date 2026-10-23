@@ -1,9 +1,23 @@
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import { ApiError, postJson } from "./lib/api.ts";
+import {
+  AnswersFileError,
+  CHOICES,
+  decisionsTemplate,
+  followupTemplate,
+  parseDecisions,
+  parseFollowup,
+  type Decision,
+  type Question,
+} from "./lib/answers-file.ts";
 import { askChoice, askRequired, confirm } from "./lib/ask.ts";
 import { checkRepoReady } from "./lib/git.ts";
 import {
+  ANSWERS_DIR,
+  FOLLOWUP_STATE_PATH,
   PENDING_ANSWERS_PATH,
+  ROOT,
   loadCandidate,
   loadCurrentTicket,
   parseTicket,
@@ -11,16 +25,22 @@ import {
   saveTicket,
   writePrivateJson,
   type Answer,
+  type AnswerMode,
   type Candidate,
   type PendingAnswers,
   type Ticket,
 } from "./lib/state.ts";
 import { isUnfilled, readUpdatesEntry } from "./lib/updates.ts";
 
-const CHOICES = ["code", "llm", "hybrid"] as const;
+const EXIT_OK = 0;
+const EXIT_ERROR = 1;
+const EXIT_FOLLOWUP_NEEDED = 3;
 
-type Decision = Readonly<{ key: string; choice: (typeof CHOICES)[number]; why: string }>;
-type Question = Readonly<{ id: string; text: string }>;
+type FollowupState = Readonly<{ ticket_id: string; questions: readonly Question[] }>;
+
+const rel = (path: string) => relative(ROOT, path);
+const decisionsPath = (ticketId: string) => join(ANSWERS_DIR, `${ticketId}.md`);
+const followupPath = (ticketId: string) => join(ANSWERS_DIR, `${ticketId}-followup.md`);
 
 function askDecisions(ticket: Ticket): Decision[] {
   if (ticket.decisions_required.length === 0) return [];
@@ -33,6 +53,22 @@ function askDecisions(ticket: Ticket): Decision[] {
   });
 }
 
+function readDecisionsFile(ticket: Ticket): Decision[] | null {
+  if (ticket.decisions_required.length === 0) return [];
+  const path = decisionsPath(ticket.id);
+  if (!existsSync(path)) {
+    mkdirSync(ANSWERS_DIR, { recursive: true });
+    writeFileSync(path, decisionsTemplate(ticket.id, ticket.decisions_required));
+    console.error(
+      `${ticket.id} needs answers to ${ticket.decisions_required.length} decision question(s): ${ticket.decisions_required.map((d) => d.key).join(", ")}.\n` +
+        `Wrote ${rel(path)} with one section per decision. The candidate fills it in: these answers are read as yours, ` +
+        `and we ask about them on the call.\nThen commit and push it, and run bun run submit again.`,
+    );
+    return null;
+  }
+  return parseDecisions(readFileSync(path, "utf8"), ticket.decisions_required);
+}
+
 function parseQuestions(value: unknown): Question[] {
   const questions = (value as { questions?: unknown })?.questions;
   if (!Array.isArray(questions)) throw new Error("/v1/submit response has no questions list");
@@ -43,7 +79,6 @@ function parseQuestions(value: unknown): Question[] {
 }
 
 function askQuestions(questions: readonly Question[]): Answer[] {
-  if (questions.length === 0) return [];
   console.log("\nA few questions about this checkpoint. Answer in your own words.\n");
   return questions.map((q, i) => {
     console.log(`${i + 1}. ${q.text}`);
@@ -57,13 +92,14 @@ async function sendAnswers(candidate: Candidate, pending: PendingAnswers): Promi
     candidate_token: candidate.candidate_token,
     ticket_id: pending.ticket_id,
     answers: pending.answers,
+    answer_mode: pending.answer_mode ?? "tty",
   })) as { next_ticket?: unknown; done?: unknown };
   rmSync(PENDING_ANSWERS_PATH, { force: true });
 
   if (result.next_ticket) {
     const next = parseTicket(result.next_ticket);
     const path = saveTicket(next);
-    console.log(`\nNext up: ${next.id}: ${next.title}\nSaved to ${path}. Commit it, then read it before you start.`);
+    console.log(`\nNext up: ${next.id}: ${next.title}\nSaved to ${rel(path)}. Commit it, then read it before you start.`);
     return;
   }
   if (result.done === true) {
@@ -81,19 +117,54 @@ async function resumePending(candidate: Candidate): Promise<boolean> {
   return true;
 }
 
-async function submit(candidate: Candidate, ticket: Ticket): Promise<void> {
+function askForFollowupFile(ticketId: string, questions: readonly Question[]): number {
+  const path = followupPath(ticketId);
+  mkdirSync(ANSWERS_DIR, { recursive: true });
+  writeFileSync(path, followupTemplate(ticketId, questions));
+  writePrivateJson(FOLLOWUP_STATE_PATH, { ticket_id: ticketId, questions } satisfies FollowupState);
+  console.error(
+    `\nThe server asked ${questions.length} follow-up question(s) about ${ticketId}. They are in ${rel(path)}.\n` +
+      `Answer these in that file, then run \`bun run submit --followup\`. The candidate writes these answers: ` +
+      `we read them as yours, and we ask about them on the call.`,
+  );
+  return EXIT_FOLLOWUP_NEEDED;
+}
+
+async function postFollowup(candidate: Candidate): Promise<number> {
+  if (!existsSync(FOLLOWUP_STATE_PATH)) {
+    console.error("No follow-up questions are waiting. Run bun run submit to submit the current ticket.");
+    return EXIT_ERROR;
+  }
+  const state = readJson(FOLLOWUP_STATE_PATH) as FollowupState;
+  const path = followupPath(state.ticket_id);
+  if (!existsSync(path)) throw new AnswersFileError(`${rel(path)} is missing`, state.questions.map((q) => q.id));
+  const answers = parseFollowup(readFileSync(path, "utf8"), state.questions);
+  await sendAnswers(candidate, { ticket_id: state.ticket_id, answers, answer_mode: "file" });
+  rmSync(FOLLOWUP_STATE_PATH, { force: true });
+  return EXIT_OK;
+}
+
+async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode): Promise<number> {
   const repo = checkRepoReady();
   const updates_entry = readUpdatesEntry(ticket.id);
-  if (isUnfilled(updates_entry) && !confirm(`UPDATES.md has no entry for ${ticket.id} yet. Submit anyway?`)) {
-    console.log("Stopped. Fill in UPDATES.md, commit, push and run bun run submit again.");
-    return;
+  if (isUnfilled(updates_entry)) {
+    if (mode === "file") {
+      console.error(`UPDATES.md has no entry for ${ticket.id} yet. Fill in its section, commit, push and run bun run submit again.`);
+      return EXIT_ERROR;
+    }
+    if (!confirm(`UPDATES.md has no entry for ${ticket.id} yet. Submit anyway?`)) {
+      console.log("Stopped. Fill in UPDATES.md, commit, push and run bun run submit again.");
+      return EXIT_OK;
+    }
   }
-  const decisions = askDecisions(ticket);
 
-  console.log(`\nSubmitting ${ticket.id} at ${repo.commit_sha.slice(0, 12)} from ${repo.repo_url}.`);
-  if (!confirm("This locks the ticket. Submit now?")) {
+  const decisions = mode === "tty" ? askDecisions(ticket) : readDecisionsFile(ticket);
+  if (decisions === null) return EXIT_ERROR;
+
+  console.log(`\nSubmitting ${ticket.id} at ${repo.commit_sha.slice(0, 12)} from ${repo.repo_url}. This locks the ticket.`);
+  if (mode === "tty" && !confirm("Submit now?")) {
     console.log("Not submitted.");
-    return;
+    return EXIT_OK;
   }
 
   const response = await postJson(candidate.server_url, "/v1/submit", {
@@ -103,12 +174,24 @@ async function submit(candidate: Candidate, ticket: Ticket): Promise<void> {
     repo_url: repo.repo_url,
     updates_entry,
     decisions,
+    answer_mode: mode,
   });
   console.log(`Submitted (${(response as { submission_id?: string }).submission_id ?? "no id"}).`);
-  await sendAnswers(candidate, { ticket_id: ticket.id, answers: askQuestions(parseQuestions(response)) });
+
+  const questions = parseQuestions(response);
+  if (questions.length === 0) {
+    await sendAnswers(candidate, { ticket_id: ticket.id, answers: [], answer_mode: mode });
+    return EXIT_OK;
+  }
+  if (mode === "file") return askForFollowupFile(ticket.id, questions);
+  await sendAnswers(candidate, { ticket_id: ticket.id, answers: askQuestions(questions), answer_mode: mode });
+  return EXIT_OK;
 }
 
 function explain(err: unknown): string {
+  if (err instanceof AnswersFileError) {
+    return `${err.message}\nEvery one of these needs an answer: ${err.keys.join(", ")}.`;
+  }
   if (err instanceof ApiError && err.status === 409) {
     return `The server refused this submission: ${err.message}\nThe ticket is either already submitted or not your current one. Check TICKETS/ for the latest ticket.`;
   }
@@ -121,18 +204,24 @@ function explain(err: unknown): string {
   return (err as Error).message;
 }
 
-async function main(): Promise<number> {
+async function main(argv: readonly string[]): Promise<number> {
+  const mode: AnswerMode = process.stdin.isTTY ? "tty" : "file";
   const candidate = loadCandidate();
-  if (await resumePending(candidate)) return 0;
-  await submit(candidate, loadCurrentTicket());
-  return 0;
+  if (argv.includes("--followup")) return postFollowup(candidate);
+  if (await resumePending(candidate)) return EXIT_OK;
+  if (existsSync(FOLLOWUP_STATE_PATH)) {
+    const state = readJson(FOLLOWUP_STATE_PATH) as FollowupState;
+    console.error(`Follow-up questions for ${state.ticket_id} are waiting in ${rel(followupPath(state.ticket_id))}. Answer them, then run \`bun run submit --followup\`.`);
+    return EXIT_FOLLOWUP_NEEDED;
+  }
+  return submit(candidate, loadCurrentTicket(), mode);
 }
 
 if (import.meta.main) {
   try {
-    process.exit(await main());
+    process.exit(await main(process.argv.slice(2)));
   } catch (err) {
     console.error(`\nsubmit failed: ${explain(err)}`);
-    process.exit(1);
+    process.exit(EXIT_ERROR);
   }
 }

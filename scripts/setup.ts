@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseArgs } from "node:util";
 import { postJson } from "./lib/api.ts";
 import { ask, confirm } from "./lib/ask.ts";
 import { buildDecoyCsv } from "./lib/decoy.ts";
@@ -45,10 +46,23 @@ function parseStart(value: unknown): Omit<Candidate, "candidate_token" | "server
   };
 }
 
-function askServerUrl(): string {
-  const url = ask(`Assessment server URL [${DEFAULT_SERVER_URL}]:`) || DEFAULT_SERVER_URL;
+const USAGE = "usage: ./setup.sh <candidate-token> [--server-url <url>] [--consent-hooks yes|no] [--force]";
+
+const NO_CONSENT_FLAG = `
+Recording consent has to come from the candidate, not from an AI tool.
+Show the candidate the consent text above and ask them whether to install the hooks.
+Then re-run with their answer: ./setup.sh <candidate-token> --consent-hooks yes   (or --consent-hooks no)`;
+
+function resolveServerUrl(flag: string | undefined, interactive: boolean): string {
+  const url = (flag ?? (interactive ? ask(`Assessment server URL [${DEFAULT_SERVER_URL}]:`) : "")) || DEFAULT_SERVER_URL;
   if (!/^https?:\/\/[^\s/]+/.test(url)) throw new Error(`"${url}" is not an http(s) URL`);
   return url.replace(/\/+$/, "");
+}
+
+function parseConsentFlag(value: string | undefined): boolean | null {
+  if (value === undefined) return null;
+  if (value === "yes" || value === "no") return value === "yes";
+  throw new Error(`--consent-hooks must be yes or no, got "${value}"`);
 }
 
 function installHooks(serverUrl: string, token: string): void {
@@ -65,20 +79,35 @@ function writeDecoy(canary: string): void {
 }
 
 async function main(argv: readonly string[]): Promise<number> {
-  const force = argv.includes("--force");
-  const token = argv.find((arg) => !arg.startsWith("--"));
-  if (!token || /\s/.test(token)) {
-    console.error("usage: ./setup.sh <candidate-token> [--force]");
+  const { values, positionals } = parseArgs({
+    args: [...argv],
+    allowPositionals: true,
+    options: {
+      force: { type: "boolean", default: false },
+      "server-url": { type: "string" },
+      "consent-hooks": { type: "string" },
+    },
+  });
+  const token = positionals[0];
+  if (!token || positionals.length > 1 || /\s/.test(token)) {
+    console.error(USAGE);
     return 2;
   }
+  const force = values.force === true;
+  const interactive = process.stdin.isTTY === true;
+  const consentFlag = parseConsentFlag(values["consent-hooks"]);
   if (existsSync(CANDIDATE_PATH) && !force) {
     console.error("This repo is already set up (.leadflow/candidate.json exists). Re-run with --force to redo it.");
     return 1;
   }
 
-  const serverUrl = askServerUrl();
+  const serverUrl = resolveServerUrl(values["server-url"], interactive);
   console.log(CONSENT_TEXT);
-  const hooksConsent = confirm("Install the recording hooks?");
+  if (consentFlag === null && !interactive) {
+    console.error(NO_CONSENT_FLAG);
+    return 2;
+  }
+  const hooksConsent = consentFlag ?? confirm("Install the recording hooks?");
 
   const start = parseStart(await postJson(serverUrl, "/v1/start", { candidate_token: token }));
   const ticket = parseTicket(start.ticket);

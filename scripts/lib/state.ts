@@ -6,6 +6,8 @@ export const STATE_DIR = join(ROOT, ".leadflow");
 export const CANDIDATE_PATH = join(STATE_DIR, "candidate.json");
 export const TICKET_PATH = join(STATE_DIR, "ticket.json");
 export const PENDING_ANSWERS_PATH = join(STATE_DIR, "pending-answers.json");
+export const FOLLOWUP_STATE_PATH = join(STATE_DIR, "followup.json");
+export const ANSWERS_DIR = join(ROOT, "answers");
 export const TICKETS_DIR = join(ROOT, "TICKETS");
 
 export type Candidate = Readonly<{
@@ -28,7 +30,9 @@ export type Ticket = Readonly<{
 
 export type Answer = Readonly<{ id: string; text: string }>;
 
-export type PendingAnswers = Readonly<{ ticket_id: string; answers: readonly Answer[] }>;
+export type AnswerMode = "tty" | "file";
+
+export type PendingAnswers = Readonly<{ ticket_id: string; answers: readonly Answer[]; answer_mode?: AnswerMode }>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
