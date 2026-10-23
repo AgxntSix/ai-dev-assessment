@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "leadflow": "bun leadflow.ts",
+    "leadflow:fake": "LEADFLOW_LLM=fake bun leadflow.ts",
     "migrate": "bun migrate/index.ts",
     "eval": "bun evals/run.ts",
+    "eval:fake": "LEADFLOW_LLM=fake bun evals/run.ts",
     "submit": "bun scripts/submit.ts",
     "test": "bun test"
   }
