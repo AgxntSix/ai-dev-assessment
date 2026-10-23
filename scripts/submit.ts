@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { parseArgs } from "node:util";
 import { ApiError, postJson } from "./lib/api.ts";
 import {
   AnswersFileError,
@@ -12,6 +13,7 @@ import {
   type Question,
 } from "./lib/answers-file.ts";
 import { askChoice, askRequired, confirm } from "./lib/ask.ts";
+import { FINAL_TICKET, FinalCheckError, checkFinalRepo, resolveVideoUrl } from "./lib/final.ts";
 import { checkRepoReady } from "./lib/git.ts";
 import {
   ANSWERS_DIR,
@@ -31,12 +33,19 @@ import {
   type Ticket,
 } from "./lib/state.ts";
 import { isUnfilled, readUpdatesEntry } from "./lib/updates.ts";
+import { checkVideoFile, uploadVideo, type VideoFile } from "./lib/video.ts";
 
 const EXIT_OK = 0;
 const EXIT_ERROR = 1;
 const EXIT_FOLLOWUP_NEEDED = 3;
 
 type FollowupState = Readonly<{ ticket_id: string; questions: readonly Question[] }>;
+
+type Flags = Readonly<{ followup: boolean; repoUrl?: string; videoUrl?: string; video?: string }>;
+
+type FinalPlan = Readonly<{ repo_url: string; video_url: string | null; video: VideoFile | null }>;
+
+const USAGE = "usage: bun run submit [--followup] [--repo-url <url>] [--video-url <url> | --video <file>]";
 
 const rel = (path: string) => relative(ROOT, path);
 const decisionsPath = (ticketId: string) => join(ANSWERS_DIR, `${ticketId}.md`);
@@ -144,7 +153,30 @@ async function postFollowup(candidate: Candidate): Promise<number> {
   return EXIT_OK;
 }
 
-async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode): Promise<number> {
+function planFinal(flags: Flags, remoteUrl: string): FinalPlan {
+  const repo = checkFinalRepo(flags.repoUrl, remoteUrl);
+  repo.warnings.forEach((w) => console.warn(`warning: ${w}`));
+  const video = flags.video ? checkVideoFile(flags.video) : null;
+  const video_url = resolveVideoUrl(flags.videoUrl);
+  if (!video && !video_url) console.log("No video attached. That is fine; it is optional.");
+  return { repo_url: repo.repo_url, video_url, video };
+}
+
+async function finalFields(candidate: Candidate, plan: FinalPlan | null): Promise<Record<string, string>> {
+  if (!plan) return {};
+  const fields: Record<string, string> = plan.video_url ? { video_url: plan.video_url } : {};
+  if (!plan.video) return fields;
+  console.log(`Uploading ${plan.video.filename} (${(plan.video.size_bytes / 1024 / 1024).toFixed(1)} MB).`);
+  const video_upload_id = await uploadVideo(candidate, plan.video, (line) => console.log(line));
+  return { ...fields, video_upload_id };
+}
+
+async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode, flags: Flags): Promise<number> {
+  const isFinal = ticket.id === FINAL_TICKET;
+  if (!isFinal && (flags.repoUrl || flags.videoUrl || flags.video)) {
+    console.error(`--repo-url, --video-url and --video are for the ${FINAL_TICKET} checkpoint. The current ticket is ${ticket.id}.`);
+    return EXIT_ERROR;
+  }
   const repo = checkRepoReady();
   const updates_entry = readUpdatesEntry(ticket.id);
   if (isUnfilled(updates_entry)) {
@@ -160,8 +192,10 @@ async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode): P
 
   const decisions = mode === "tty" ? askDecisions(ticket) : readDecisionsFile(ticket);
   if (decisions === null) return EXIT_ERROR;
+  const plan = isFinal ? planFinal(flags, repo.repo_url) : null;
+  const repo_url = plan?.repo_url ?? repo.repo_url;
 
-  console.log(`\nSubmitting ${ticket.id} at ${repo.commit_sha.slice(0, 12)} from ${repo.repo_url}. This locks the ticket.`);
+  console.log(`\nSubmitting ${ticket.id} at ${repo.commit_sha.slice(0, 12)} from ${repo_url}. This locks the ticket.`);
   if (mode === "tty" && !confirm("Submit now?")) {
     console.log("Not submitted.");
     return EXIT_OK;
@@ -171,10 +205,11 @@ async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode): P
     candidate_token: candidate.candidate_token,
     ticket_id: ticket.id,
     commit_sha: repo.commit_sha,
-    repo_url: repo.repo_url,
+    repo_url,
     updates_entry,
     decisions,
     answer_mode: mode,
+    ...(await finalFields(candidate, plan)),
   });
   console.log(`Submitted (${(response as { submission_id?: string }).submission_id ?? "no id"}).`);
 
@@ -189,6 +224,7 @@ async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode): P
 }
 
 function explain(err: unknown): string {
+  if (err instanceof FinalCheckError) return err.message;
   if (err instanceof AnswersFileError) {
     return `${err.message}\nEvery one of these needs an answer: ${err.keys.join(", ")}.`;
   }
@@ -204,17 +240,34 @@ function explain(err: unknown): string {
   return (err as Error).message;
 }
 
+function parseFlags(argv: readonly string[]): Flags {
+  const { values, positionals } = parseArgs({
+    args: [...argv],
+    allowPositionals: true,
+    options: {
+      followup: { type: "boolean", default: false },
+      "repo-url": { type: "string" },
+      "video-url": { type: "string" },
+      video: { type: "string" },
+    },
+  });
+  if (positionals.length > 0) throw new Error(USAGE);
+  if (values.video && values["video-url"]) throw new Error("Pass either --video <file> or --video-url <url>, not both.");
+  return { followup: values.followup === true, repoUrl: values["repo-url"], videoUrl: values["video-url"], video: values.video };
+}
+
 async function main(argv: readonly string[]): Promise<number> {
+  const flags = parseFlags(argv);
   const mode: AnswerMode = process.stdin.isTTY ? "tty" : "file";
   const candidate = loadCandidate();
-  if (argv.includes("--followup")) return postFollowup(candidate);
+  if (flags.followup) return postFollowup(candidate);
   if (await resumePending(candidate)) return EXIT_OK;
   if (existsSync(FOLLOWUP_STATE_PATH)) {
     const state = readJson(FOLLOWUP_STATE_PATH) as FollowupState;
     console.error(`Follow-up questions for ${state.ticket_id} are waiting in ${rel(followupPath(state.ticket_id))}. Answer them, then run \`bun run submit --followup\`.`);
     return EXIT_FOLLOWUP_NEEDED;
   }
-  return submit(candidate, loadCurrentTicket(), mode);
+  return submit(candidate, loadCurrentTicket(), mode, flags);
 }
 
 if (import.meta.main) {
