@@ -137,7 +137,7 @@ export function commitAndPush(work: string): void {
 
 export type RunResult = Readonly<{ code: number; out: string; err: string }>;
 
-export async function run(ws: Workspace, args: string[], env: Record<string, string> = {}): Promise<RunResult> {
+export async function run(ws: Workspace, args: string[], env: Record<string, string> = {}, stdin = ""): Promise<RunResult> {
   const proc = Bun.spawn(["bun", ...args], {
     cwd: ws.work,
     env: { HOME: process.env.HOME ?? "", PATH: `${ws.bin}:${process.env.PATH ?? ""}`, ...env },
@@ -145,6 +145,7 @@ export async function run(ws: Workspace, args: string[], env: Record<string, str
     stdout: "pipe",
     stderr: "pipe",
   });
+  proc.stdin.write(stdin);
   proc.stdin.end();
   const [out, err, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
   return { code, out, err };

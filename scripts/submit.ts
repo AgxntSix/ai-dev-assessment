@@ -14,7 +14,8 @@ import {
 } from "./lib/answers-file.ts";
 import { askChoice, askRequired, confirm } from "./lib/ask.ts";
 import { FINAL_TICKET, FinalCheckError, SHARED_SKILLS_DIR, checkFinalRepo, resolveVideoUrl, writeupWarnings } from "./lib/final.ts";
-import { checkRepoReady, trackedFileCount } from "./lib/git.ts";
+import { checkRepoReady, trackedFileCount, trackedFiles } from "./lib/git.ts";
+import { findTokenLeaks, leakMessage } from "./lib/secrets.ts";
 import {
   ANSWERS_DIR,
   FOLLOWUP_STATE_PATH,
@@ -198,6 +199,11 @@ async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode, fl
     return EXIT_ERROR;
   }
   const repo = checkRepoReady();
+  const leaks = findTokenLeaks(ROOT, trackedFiles(), candidate);
+  if (leaks.length > 0) {
+    console.error(leakMessage(leaks));
+    return EXIT_ERROR;
+  }
   const updates_entry = readUpdatesEntry(ticket.id);
   if (isUnfilled(updates_entry)) {
     if (mode === "file") {

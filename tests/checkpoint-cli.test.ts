@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOKEN, cleanupTemp, commitAndPush as commitAndPushWs, makeWorkspace, run, startFakeServer, type Workspace } from "./cli-harness.ts";
 
@@ -49,6 +49,33 @@ describe("setup without a TTY", () => {
     expect(existsSync(join(work, "TICKETS", "AGX-200.md"))).toBe(true);
   });
 
+  test("reads the token from stdin with --token-stdin, keeping it off the command line", async () => {
+    const result = await run(ws, ["scripts/setup.ts", "--token-stdin", "--server-url", SERVER_URL, "--consent-hooks", "no"], {}, `${TOKEN}\n`);
+    expect(result.code).toBe(0);
+    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN });
+    expect(result.out + result.err).not.toContain(TOKEN);
+  });
+
+  test("reads the token from AGX_CANDIDATE_TOKEN", async () => {
+    const result = await run(ws, ["scripts/setup.ts", "--server-url", SERVER_URL, "--consent-hooks", "no"], { AGX_CANDIDATE_TOKEN: TOKEN });
+    expect(result.code).toBe(0);
+    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN });
+  });
+
+  test("with no token anywhere, prints usage and calls nothing", async () => {
+    const result = await run(ws, ["scripts/setup.ts", "--server-url", SERVER_URL, "--consent-hooks", "no"]);
+    expect(result.code).toBe(2);
+    expect(result.err).toContain("--token-stdin");
+    expect(callsTo("/v1/start")).toHaveLength(0);
+  });
+
+  test("refuses a token both as an argument and on stdin", async () => {
+    const result = await run(ws, ["scripts/setup.ts", TOKEN, "--token-stdin", "--server-url", SERVER_URL, "--consent-hooks", "no"], {}, `${TOKEN}\n`);
+    expect(result.code).toBe(1);
+    expect(result.err).toContain("not both");
+    expect(callsTo("/v1/start")).toHaveLength(0);
+  });
+
   test("the canary only goes into the decoy, never into candidate.json", async () => {
     expect((await setup("--consent-hooks", "no")).code).toBe(0);
     const candidateFile = readFileSync(join(work, ".leadflow", "candidate.json"), "utf8");
@@ -80,6 +107,41 @@ describe("setup without a TTY", () => {
     expect(result.code).toBe(1);
     expect(result.err).toContain("--consent-hooks must be yes or no");
     expect(callsTo("/v1/start")).toHaveLength(0);
+  });
+});
+
+describe("submit refuses committed tokens", () => {
+  beforeEach(async () => {
+    expect((await setup("--consent-hooks", "no")).code).toBe(0);
+    commitAndPush();
+    calls.length = 0;
+  });
+
+  const leakAndSubmit = async (file: string, content: string) => {
+    mkdirSync(join(work, file, ".."), { recursive: true });
+    writeFileSync(join(work, file), content);
+    commitAndPush();
+    return submit();
+  };
+
+  test.each([
+    ["transcripts/session.md", `# Session\n> ! ./setup.sh ${TOKEN}\n`, "transcripts/session.md:2 contains your candidate token"],
+    ["UPDATES.md", `## AGX-200\n\nProxy was agx_pt_x in my tests.\n`, "UPDATES.md:3 contains your proxy token"],
+    ["WRITEUP.md", "Line one\nsome other agx_ct_someoneelse123 token\n", "WRITEUP.md:2 contains an agx_ token"],
+    ["transcripts/nested/run.json", JSON.stringify({ msg: `token ${TOKEN}` }), "transcripts/nested/run.json:1 contains your candidate token"],
+  ])("%s", async (file, content, expected) => {
+    const result = await leakAndSubmit(file, content);
+    expect(result.code).toBe(1);
+    expect(result.err).toContain(expected);
+    expect(result.err).toContain("[REDACTED]");
+    expect(result.out + result.err).not.toContain(TOKEN);
+    expect(result.out + result.err).not.toContain("agx_pt_x");
+    expect(callsTo("/v1/submit")).toHaveLength(0);
+  });
+
+  test("files outside the scanned set are not flagged", async () => {
+    const result = await leakAndSubmit("notes/scratch.md", `${TOKEN}\n`);
+    expect(result.err).not.toContain("Refusing to submit: a token");
   });
 });
 

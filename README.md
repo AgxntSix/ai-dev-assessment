@@ -36,10 +36,16 @@ You need [Bun](https://bun.sh) 1.4 or later and git. Use Claude Code, Cursor, Co
 
 Your AI tool can run every command here, including setup and submit. Two things stay with you:
 
-- **Consent.** Run setup with your own answer: `./setup.sh <candidate-token> --consent-hooks yes` (or `no`). Without a terminal and without that flag, setup stops and asks for it.
+- **Consent.** Run setup with your own answer: `--consent-hooks yes` (or `no`), as in the token-safe command below. Without a terminal and without that flag, setup stops and asks for it.
 - **Decision answers.** Without a terminal, `bun run submit` writes `answers/<TICKET>.md` with one section per decision. Fill it in, commit, push and run submit again. If the server then asks follow-up questions, they land in `answers/<TICKET>-followup.md`; answer them there and run `bun run submit --followup`. We read these answers as yours, and we ask about them on the call.
 
-In Claude Code you can also type `! ./setup.sh <candidate-token>` or `! bun run submit` to run it yourself from your session. If it cannot prompt you there, it uses the file flow above.
+**Keep your token out of the conversation.** Anything typed into your AI session can end up in the transcript you commit. Inside an AI tool, copy the token to your clipboard and pipe it in, so it never appears in a command:
+
+```
+pbpaste | ./setup.sh --token-stdin --consent-hooks yes      # macOS (Linux: wl-paste or xclip -o)
+```
+
+In Claude Code, put `!` in front to run it yourself from the session. In a plain terminal, `./setup.sh <candidate-token>` is fine. `AGX_CANDIDATE_TOKEN` in the environment also works. `bun run submit` refuses to send anything while a token appears in `transcripts/`, `UPDATES.md`, `DECISIONS.md` or `WRITEUP.md`, and tells you the file and line to redact.
 
 ## Rules
 

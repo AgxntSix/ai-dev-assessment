@@ -46,7 +46,20 @@ function parseStart(value: unknown): Omit<Candidate, "candidate_token" | "server
   };
 }
 
-const USAGE = "usage: ./setup.sh <candidate-token> [--server-url <url>] [--consent-hooks yes|no] [--force]";
+const USAGE = [
+  "usage: ./setup.sh <candidate-token> [--server-url <url>] [--consent-hooks yes|no] [--force]",
+  "   or: <command that prints the token> | ./setup.sh --token-stdin --consent-hooks yes|no",
+  "   or: AGX_CANDIDATE_TOKEN=... ./setup.sh --consent-hooks yes|no",
+].join("\n");
+
+const TOKEN_RE = /^[A-Za-z0-9_.-]{8,200}$/;
+
+async function resolveToken(positional: string | undefined, fromStdin: boolean): Promise<string | null> {
+  if (positional && fromStdin) throw new Error("Pass the token as an argument or with --token-stdin, not both.");
+  const token = positional ?? (fromStdin ? (await Bun.stdin.text()).split("\n")[0]! : process.env.AGX_CANDIDATE_TOKEN);
+  const trimmed = token?.trim() ?? "";
+  return TOKEN_RE.test(trimmed) ? trimmed : null;
+}
 
 const NO_CONSENT_FLAG = `
 Recording consent has to come from the candidate, not from an AI tool.
@@ -86,11 +99,16 @@ async function main(argv: readonly string[]): Promise<number> {
       force: { type: "boolean", default: false },
       "server-url": { type: "string" },
       "consent-hooks": { type: "string" },
+      "token-stdin": { type: "boolean", default: false },
     },
   });
-  const token = positionals[0];
-  if (!token || positionals.length > 1 || /\s/.test(token)) {
+  if (positionals.length > 1) {
     console.error(USAGE);
+    return 2;
+  }
+  const token = await resolveToken(positionals[0], values["token-stdin"] === true);
+  if (!token) {
+    console.error(`No valid candidate token given.\n${USAGE}`);
     return 2;
   }
   const force = values.force === true;
