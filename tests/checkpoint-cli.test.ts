@@ -205,9 +205,17 @@ describe("submit refuses committed tokens", () => {
     expect(result.err).not.toContain("Refusing to submit: a token");
   });
 
-  test("a hook token in a transcript does not block: it can only post telemetry", async () => {
+  test("a real-length hook token in a transcript is refused, without printing it", async () => {
     const hookToken = ["agx", "ht", "SG9va1Rva2VuRm9yVGVzdHM".padEnd(43, "0")].join("_");
-    const result = await leakAndSubmit("transcripts/session.md", `Read settings: X-Candidate-Token: ${hookToken}\n`);
+    const result = await leakAndSubmit("transcripts/session.md", `Read settings:\nX-Candidate-Token: ${hookToken}\n`);
+    expect(result.code).toBe(1);
+    expect(result.err).toContain("transcripts/session.md:2 contains an agx_ token");
+    expect(result.out + result.err).not.toContain(hookToken);
+    expect(callsTo("/v1/submit")).toHaveLength(0);
+  });
+
+  test("a short hook-token look-alike is not refused", async () => {
+    const result = await leakAndSubmit("transcripts/session.md", "header was agx_ht_hook1 in the fake server\n");
     expect(result.err).not.toContain("Refusing to submit: a token");
   });
 
