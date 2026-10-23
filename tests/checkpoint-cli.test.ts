@@ -75,6 +75,7 @@ describe("submit without a TTY", () => {
     const result = await submit();
     expect(result.code).toBe(1);
     expect(result.err).toContain("normalisation");
+    expect(result.err).toContain("Nothing has been submitted yet");
     expect(readFileSync(join(work, "answers", "AGX-200.md"), "utf8")).toContain("## normalisation");
     expect(callsTo("/v1/submit")).toHaveLength(0);
   });
@@ -97,6 +98,7 @@ describe("submit without a TTY", () => {
     const first = await submit();
     expect(first.code).toBe(3);
     expect(first.err).toContain("bun run submit --followup");
+    expect(first.err).toContain("Exit code 3 is expected here");
     const sent = bodyOf("/v1/submit");
     expect(sent.answer_mode).toBe("file");
     expect(sent.decisions).toEqual([{ key: "normalisation", choice: "code", why: "Formats are fixed rules." }]);

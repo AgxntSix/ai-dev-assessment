@@ -71,7 +71,8 @@ function readDecisionsFile(ticket: Ticket): Decision[] | null {
     console.error(
       `${ticket.id} needs answers to ${ticket.decisions_required.length} decision question(s): ${ticket.decisions_required.map((d) => d.key).join(", ")}.\n` +
         `Wrote ${rel(path)} with one section per decision. The candidate fills it in: these answers are read as yours, ` +
-        `and we ask about them on the call.\nThen commit and push it, and run bun run submit again.`,
+        `and we ask about them on the call.\nThen commit and push it, and run bun run submit again.\n` +
+        `Nothing has been submitted yet; exit code 1 here only means the answers are missing.`,
     );
     return null;
   }
@@ -134,7 +135,8 @@ function askForFollowupFile(ticketId: string, questions: readonly Question[]): n
   console.error(
     `\nThe server asked ${questions.length} follow-up question(s) about ${ticketId}. They are in ${rel(path)}.\n` +
       `Answer these in that file, then run \`bun run submit --followup\`. The candidate writes these answers: ` +
-      `we read them as yours, and we ask about them on the call.`,
+      `we read them as yours, and we ask about them on the call.\n` +
+      `${ticketId} itself is submitted. Exit code 3 is expected here: it means follow-up answers are waiting, not that anything failed.`,
   );
   return EXIT_FOLLOWUP_NEEDED;
 }
