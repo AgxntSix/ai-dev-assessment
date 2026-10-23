@@ -143,7 +143,7 @@ To check where you are at any point, ask your AI tool to call the `check_status`
 
 ## Recording and consent
 
-If you agree during setup, `./setup.sh` installs Claude Code hooks in `.claude/settings.local.json` (gitignored). They send each prompt, tool call and session event from Claude Code sessions in this repo to our assessment server, tagged with your candidate token. We record nothing outside this repo, keep the data for 90 days, and use it only to assess your application. The hooks never block your session. Delete that file to stop recording at any time.
+If you agree during setup, `./setup.sh` installs Claude Code hooks in `.claude/settings.local.json` (gitignored). They send each prompt, tool call and session event from Claude Code sessions in this repo to our assessment server, tagged with a hook-only token that can send recordings and nothing else. We record nothing outside this repo, keep the data for 90 days, and use it only to assess your application. The hooks never block your session. Delete that file to stop recording at any time.
 
 Model calls through the proxy are logged too, as they would be in production.
 

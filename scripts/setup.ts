@@ -17,8 +17,8 @@ Recording consent
 To see how you work with AI tools, we can install Claude Code hooks in this repo
 (.claude/settings.local.json, gitignored). While you use Claude Code inside this
 folder, they send each prompt, each tool call and its result, and session start
-and end events to the AgxntSix AI assessment server, tagged with your candidate
-token.
+and end events to the AgxntSix AI assessment server, tagged with a hook-only
+token that can send recordings and nothing else.
 
 - Only Claude Code sessions in this repo are recorded. Nothing else on your machine.
 - The data is used only to assess your application and is deleted after 90 days.
@@ -29,20 +29,28 @@ If you say no, nothing is installed. That is fine: commit an export of your agen
 conversation to transcripts/ instead, as the README asks.
 `;
 
-type StartResponse = { ticket: unknown; candidate_id: unknown; proxy_token: unknown; canary: unknown };
+type StartResponse = { ticket: unknown; candidate_id: unknown; proxy_token: unknown; hook_token?: unknown; canary: unknown };
 
-function parseStart(value: unknown): Omit<Candidate, "candidate_token" | "server_url" | "hooks_consent"> & { ticket: unknown; canary: string } {
+type Start = Omit<Candidate, "candidate_token" | "server_url" | "hooks_consent"> & { ticket: unknown; canary: string; hook_token: string | null };
+
+const HOOK_TOKEN_RE = /^agx_ht_[A-Za-z0-9_-]+$/;
+
+function parseStart(value: unknown): Start {
   const body = value as StartResponse;
   for (const field of ["candidate_id", "proxy_token", "canary"] as const) {
     if (typeof body?.[field] !== "string" || body[field] === "") {
       throw new Error(`/v1/start response is missing ${field}`);
     }
   }
+  if (body.hook_token !== undefined && (typeof body.hook_token !== "string" || !HOOK_TOKEN_RE.test(body.hook_token))) {
+    throw new Error("/v1/start sent a malformed hook_token");
+  }
   return {
     ticket: body.ticket,
     candidate_id: body.candidate_id as string,
     proxy_token: body.proxy_token as string,
     canary: body.canary as string,
+    hook_token: (body.hook_token as string | undefined) ?? null,
   };
 }
 
@@ -138,7 +146,12 @@ async function main(argv: readonly string[]): Promise<number> {
     hooks_consent: hooksConsent,
   };
   writePrivateJson(CANDIDATE_PATH, candidate);
-  if (hooksConsent) installHooks(serverUrl, token);
+  if (hooksConsent) {
+    // The hook token can only post telemetry, so a session that reads the settings file leaks nothing
+    // that opens the assessment. Servers from before hook tokens existed still accept the candidate token.
+    if (!start.hook_token) console.warn("warning: this server did not issue a hook token; the hooks use your candidate token.");
+    installHooks(serverUrl, start.hook_token ?? token);
+  }
   writeDecoy(start.canary);
   const ticketPath = saveTicket(ticket);
 

@@ -103,6 +103,39 @@ describe("setup without a TTY", () => {
     expect(settings.hooks.PreToolUse[0].hooks[0].url).toBe(`${SERVER_URL}/v1/hooks`);
   });
 
+  test("hooks carry the hook-only token, never the candidate token, including the SessionStart curl", async () => {
+    expect((await setup("--consent-hooks", "yes")).code).toBe(0);
+    const text = readFileSync(join(work, ".claude", "settings.local.json"), "utf8");
+    expect(text).not.toContain(TOKEN);
+    const settings = JSON.parse(text);
+    const hookToken = settings.hooks.UserPromptSubmit[0].hooks[0].headers["X-Candidate-Token"];
+    expect(hookToken).toMatch(/^agx_ht_hook\d+$/);
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toContain(`X-Candidate-Token: ${hookToken}`);
+  });
+
+  test("setup --force rewrites the hooks with the newly rotated hook token", async () => {
+    const hookToken = () =>
+      JSON.parse(readFileSync(join(work, ".claude", "settings.local.json"), "utf8")).hooks.PreToolUse[0].hooks[0].headers["X-Candidate-Token"];
+    expect((await setup("--consent-hooks", "yes")).code).toBe(0);
+    const first = hookToken();
+    expect((await setup("--consent-hooks", "yes", "--force")).code).toBe(0);
+    expect(hookToken()).toMatch(/^agx_ht_hook\d+$/);
+    expect(hookToken()).not.toBe(first);
+    expect(readFileSync(join(work, ".claude", "settings.local.json"), "utf8")).not.toContain(first);
+  });
+
+  test("a server without hook tokens falls back to the candidate token, with a warning", async () => {
+    server.setIssueHookTokens(false);
+    try {
+      const result = await setup("--consent-hooks", "yes");
+      expect(result.code).toBe(0);
+      expect(result.err).toContain("did not issue a hook token");
+      expect(readFileSync(join(work, ".claude", "settings.local.json"), "utf8")).toContain(TOKEN);
+    } finally {
+      server.setIssueHookTokens(true);
+    }
+  });
+
   test("rejects a consent value other than yes or no", async () => {
     const result = await setup("--consent-hooks", "sure");
     expect(result.code).toBe(1);
@@ -169,6 +202,12 @@ describe("submit refuses committed tokens", () => {
 
   test("short placeholders like the ones in tests/ are not tokens", async () => {
     const result = await leakAndSubmit("transcripts/session.md", "Read tests: TOKEN = \"agx_ct_test\", proxy_token: \"agx_pt_x\"\n");
+    expect(result.err).not.toContain("Refusing to submit: a token");
+  });
+
+  test("a hook token in a transcript does not block: it can only post telemetry", async () => {
+    const hookToken = ["agx", "ht", "SG9va1Rva2VuRm9yVGVzdHM".padEnd(43, "0")].join("_");
+    const result = await leakAndSubmit("transcripts/session.md", `Read settings: X-Candidate-Token: ${hookToken}\n`);
     expect(result.err).not.toContain("Refusing to submit: a token");
   });
 

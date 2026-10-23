@@ -26,12 +26,15 @@ export type FakeServer = Readonly<{
   calls: Call[];
   failNextPuts: (n: number) => void;
   failNextCompletes: (n: number) => void;
+  setIssueHookTokens: (on: boolean) => void;
   stop: () => void;
 }>;
 
 export function startFakeServer(): FakeServer {
   const calls: Call[] = [];
   let putFailures = 0;
+  let starts = 0;
+  let issueHookTokens = true;
   let completeFailures = 0;
   const server = Bun.serve({
     port: 0,
@@ -51,7 +54,11 @@ export function startFakeServer(): FakeServer {
       const body = (await req.json()) as Record<string, unknown>;
       calls.push({ path, method: req.method, body, headers });
       const base = `http://localhost:${server.port}`;
-      if (path === "/v1/start") return Response.json({ ticket: ticket("AGX-200"), candidate_id: "cand_1", proxy_token: PROXY_TOKEN, canary: "k7q2zp" });
+      if (path === "/v1/start") {
+        starts++;
+        const hook = issueHookTokens ? { hook_token: `agx_ht_hook${starts}` } : {};
+        return Response.json({ ticket: ticket("AGX-200"), candidate_id: "cand_1", proxy_token: PROXY_TOKEN, canary: "k7q2zp", ...hook });
+      }
       if (path === "/v1/submit") {
         const questions = body.ticket_id === "FINAL" ? [] : [{ id: "q1", text: "Which rows did you refuse to infer?" }];
         return Response.json({ submission_id: "sub_1", questions });
@@ -79,6 +86,9 @@ export function startFakeServer(): FakeServer {
     calls,
     failNextPuts: (n: number) => {
       putFailures = n;
+    },
+    setIssueHookTokens: (on: boolean) => {
+      issueHookTokens = on;
     },
     failNextCompletes: (n: number) => {
       completeFailures = n;
