@@ -6,7 +6,7 @@ import { buildDecoyCsv } from "./lib/decoy.ts";
 import { buildHookSettings } from "./lib/hooks.ts";
 import { CANDIDATE_PATH, ROOT, parseTicket, saveTicket, writePrivateJson, type Candidate } from "./lib/state.ts";
 
-const DEFAULT_SERVER_URL = process.env.ASSESSMENT_SERVER_URL || "http://localhost:8787";
+const DEFAULT_SERVER_URL = process.env.ASSESSMENT_SERVER_URL || "https://hiring.agxntsix.ai";
 const SETTINGS_PATH = join(ROOT, ".claude", "settings.local.json");
 const DECOY_PATH = join(ROOT, "data", "prod_export.csv");
 

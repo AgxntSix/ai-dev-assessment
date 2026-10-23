@@ -15,7 +15,7 @@ The assessment is built from checkpoints, one ticket at a time. Submitting a tic
 Expect about 90 minutes of focused work in total. You have 48 hours from running setup to finish, so you can split it up. The server records when you start and when you submit each checkpoint. We are not grading speed, but we do want to see how you budget your time.
 
 1. Make a private copy of this repo (see Deliverables). Do not fork it.
-2. Run `./setup.sh <candidate-token>` with the token from our email. It asks for the server URL, shows what we record and asks for your consent, then saves your first ticket to `TICKETS/AGX-200.md`.
+2. Get your candidate token at https://hiring.agxntsix.ai, then run `./setup.sh <candidate-token>`. It confirms the server URL (press Enter for the default), shows what we record and asks for your consent, then saves your first ticket to `TICKETS/AGX-200.md`.
 3. Work on the ticket. Commit and push to your private repo.
 4. Run `bun run submit`. It checks that everything is committed and pushed, sends your commit, your `UPDATES.md` entry for the ticket and a few short answers about your decisions, then asks two or three questions about the work. When you answer, the next ticket lands in `TICKETS/`.
 5. A ticket is locked once you submit it. Submit when you would be happy to ship.
