@@ -14,7 +14,17 @@ The assessment is built from checkpoints, one ticket at a time. Submitting a tic
 
 Expect about 90 minutes of focused work in total. You have 48 hours from running setup to finish, so you can split it up. The server records when you start and when you submit each checkpoint. We are not grading speed, but we do want to see how you budget your time.
 
-1. Make a private copy of this repo (see Deliverables). Do not fork it.
+1. Make a private copy of this repo in your own GitHub account. Do not fork it. From a terminal, with the [GitHub CLI](https://cli.github.com) logged in:
+
+   ```
+   git clone https://github.com/AgxntSix/ai-dev-assessment leadflow-assessment
+   cd leadflow-assessment
+   git remote remove origin
+   gh repo create leadflow-assessment --private --source . --push
+   gh api -X PUT repos/<your-github-user>/leadflow-assessment/collaborators/aiwithabidi -f permission=read
+   ```
+
+   The last command shares the repo with our reviewer account, `aiwithabidi`.
 2. Get your candidate token at https://hiring.agxntsix.ai, then run `./setup.sh <candidate-token>`. It confirms the server URL (press Enter for the default), shows what we record and asks for your consent, then saves your first ticket to `TICKETS/AGX-200.md`.
 3. Work on the ticket. Commit and push to your private repo.
 4. Run `bun run submit`. It checks that everything is committed and pushed, sends your commit, your `UPDATES.md` entry for the ticket and a few short answers about your decisions, then asks two or three questions about the work. When you answer, the next ticket lands in `TICKETS/`.
@@ -112,12 +122,16 @@ bun run migrate --input <csv> [--apply] [--db <path>] [--report <path>]
 
 ## Deliverables
 
-1. **Source code.** Create a new private GitHub repository, push a copy of this repo to it (clone, then change the remote; not a fork, and no pull requests to this repo), and share it with `abidi@agxntsix.ai` and `laura@agxntsix.ai`.
+1. **Source code** in your private repo, shared with `aiwithabidi` (step 1 above). Not a fork, and no pull requests to this repo.
 2. **`WRITEUP.md`** in the repo root. Write whatever best shows your thinking. Some sections that usually help: assumptions, problem analysis and approach, technical decisions and rationale, implementation details and challenges, and future improvements.
-3. **A 5 to 7 minute video.** Walk us through your diagnosis, what you built, how you know it works, and anything else you think matters. Any link we can open works (Loom, YouTube unlisted, Drive).
-4. **Your agent trajectory.** Commit an export of your coding agent conversation to `transcripts/` as JSON, TXT or MD. In Claude Code, `/export` does this. Other tools have their own export.
+3. **Your agent trajectory.** Commit an export of your coding agent conversation to `transcripts/` as JSON, TXT or MD. In Claude Code, `/export` does this. Other tools have their own export.
+4. **A video, optional.** 5 to 7 minutes walking through your diagnosis, what you built and how you know it works. It is not required, but it helps us understand your thinking. Record it however you like, then either put `Video: <link>` near the top of `WRITEUP.md` (Loom, unlisted YouTube, Drive) or upload the file with `bun run submit --video <file>` (mp4, mov or webm, up to 500 MB).
 
-Keep `UPDATES.md` current as you go: one entry per ticket covering what you did, how you tested it, what's left and the decisions you made. Put the video link at the top of `WRITEUP.md`, run `bun run submit` for the final checkpoint, then email the repo link and the video link to both addresses above with the subject "AgxntSix AI assessment".
+Keep `UPDATES.md` current as you go: one entry per ticket covering what you did, how you tested it, what's left and the decisions you made.
+
+You do not need to email us. The final `bun run submit` sends everything: it checks that your repo is private and shared with `aiwithabidi`, then sends the repo link, your final commit and the video if you added one. Pass `--repo-url https://github.com/<owner>/<repo>` if your remote is not a GitHub URL.
+
+To check where you are at any point, ask your AI tool to call the `check_status` tool on our MCP server (`https://hiring.agxntsix.ai/mcp`).
 
 ## Recording and consent
 
@@ -129,6 +143,6 @@ If you use another tool, or say no to the hooks, the committed trajectory file i
 
 ## What happens after
 
-We read your code, `UPDATES.md`, `WRITEUP.md` and the video, and run our checks against your final commit. If it is a fit, we book a 30-minute screen share: you walk us through one ticket, then we change a requirement and you re-decide it live.
+We read your code, `UPDATES.md`, `WRITEUP.md` and the video if you sent one, and run our checks against your final commit. If it is a fit, we book a 30-minute screen share: you walk us through one ticket, then we change a requirement and you re-decide it live.
 
-Questions are welcome. Email `abidi@agxntsix.ai` and `laura@agxntsix.ai`.
+Questions are welcome: `laura@agxntsix.ai`.

@@ -57,3 +57,7 @@ _Not started._
 ### What I did
 
 ### What's left
+
+### Video
+
+Optional. It helps us understand your thinking: put `Video: <link>` near the top of `WRITEUP.md`, or run `bun run submit --video <file>`.
