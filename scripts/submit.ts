@@ -13,8 +13,8 @@ import {
   type Question,
 } from "./lib/answers-file.ts";
 import { askChoice, askRequired, confirm } from "./lib/ask.ts";
-import { FINAL_TICKET, FinalCheckError, checkFinalRepo, resolveVideoUrl } from "./lib/final.ts";
-import { checkRepoReady } from "./lib/git.ts";
+import { FINAL_TICKET, FinalCheckError, SHARED_SKILLS_DIR, checkFinalRepo, resolveVideoUrl, writeupWarnings } from "./lib/final.ts";
+import { checkRepoReady, trackedFileCount } from "./lib/git.ts";
 import {
   ANSWERS_DIR,
   FOLLOWUP_STATE_PATH,
@@ -43,7 +43,7 @@ type FollowupState = Readonly<{ ticket_id: string; questions: readonly Question[
 
 type Flags = Readonly<{ followup: boolean; repoUrl?: string; videoUrl?: string; video?: string }>;
 
-type FinalPlan = Readonly<{ repo_url: string; video_url: string | null; video: VideoFile | null }>;
+type FinalPlan = Readonly<{ repo_url: string; video_url: string | null; video: VideoFile | null; shared_skills_count: number }>;
 
 const USAGE = "usage: bun run submit [--followup] [--repo-url <url>] [--video-url <url> | --video <file>]";
 
@@ -167,12 +167,18 @@ function planFinal(flags: Flags, remoteUrl: string): FinalPlan {
         "near the top of WRITEUP.md, commit, push and run bun run submit again.",
     );
   }
-  return { repo_url: repo.repo_url, video_url, video };
+  writeupWarnings().forEach((w) => console.warn(`warning: ${w}`));
+  const shared_skills_count = trackedFileCount(SHARED_SKILLS_DIR);
+  console.log(`Shared skills: ${shared_skills_count} file(s) under ${SHARED_SKILLS_DIR}/ (optional).`);
+  return { repo_url: repo.repo_url, video_url, video, shared_skills_count };
 }
 
-async function finalFields(candidate: Candidate, plan: FinalPlan | null): Promise<Record<string, string>> {
+async function finalFields(candidate: Candidate, plan: FinalPlan | null): Promise<Record<string, string | number>> {
   if (!plan) return {};
-  const fields: Record<string, string> = plan.video_url ? { video_url: plan.video_url } : {};
+  const fields: Record<string, string | number> = {
+    shared_skills_count: plan.shared_skills_count,
+    ...(plan.video_url ? { video_url: plan.video_url } : {}),
+  };
   if (!plan.video) return fields;
   console.log(`Uploading ${plan.video.filename} (${(plan.video.size_bytes / 1024 / 1024).toFixed(1)} MB).`);
   const video_upload_id = await uploadVideo(candidate, plan.video, (line) => console.log(line));

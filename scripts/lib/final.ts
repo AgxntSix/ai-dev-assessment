@@ -8,7 +8,27 @@ const WRITEUP_PATH = join(ROOT, "WRITEUP.md");
 const VIDEO_LINE_SCAN = 15;
 const URL_RE = /^https?:\/\/[^\s/]+\.[^\s]+$/;
 
+export const AI_TOOLS_HEADING = "## AI tools I use";
+export const SHARED_SKILLS_DIR = "shared-skills";
+
 export class FinalCheckError extends Error {}
+
+// Text under a level-2 heading, up to the next one, with HTML comments (the template's prompts) removed.
+export function sectionText(markdown: string, heading: string): string | null {
+  const lines = markdown.replace(/<!--[\s\S]*?-->/g, "").split("\n");
+  const start = lines.findIndex((line) => line.trim().toLowerCase() === heading.toLowerCase());
+  if (start === -1) return null;
+  const end = lines.findIndex((line, i) => i > start && /^##\s/.test(line));
+  return lines.slice(start + 1, end === -1 ? undefined : end).join("\n").trim();
+}
+
+export function writeupWarnings(): string[] {
+  if (!existsSync(WRITEUP_PATH)) return ["WRITEUP.md is missing. The final checkpoint asks for it."];
+  const aiTools = sectionText(readFileSync(WRITEUP_PATH, "utf8"), AI_TOOLS_HEADING);
+  if (aiTools === null) return [`WRITEUP.md has no "${AI_TOOLS_HEADING}" section. It is required: say which AI tools, models and setups you use.`];
+  if (aiTools === "") return [`The "${AI_TOOLS_HEADING}" section of WRITEUP.md is empty. It is required: say which AI tools, models and setups you use.`];
+  return [];
+}
 
 export function videoLinkFromWriteup(markdown: string): string | null {
   const line = markdown.split("\n").slice(0, VIDEO_LINE_SCAN).find((l) => /^\s*\**video\**\s*:/i.test(l));

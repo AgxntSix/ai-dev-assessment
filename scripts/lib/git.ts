@@ -5,6 +5,12 @@ function git(args: readonly string[]): { ok: boolean; out: string } {
   return { ok: proc.exitCode === 0, out: proc.stdout.toString().trim() || proc.stderr.toString().trim() };
 }
 
+export function trackedFileCount(dir: string): number {
+  const files = git(["ls-files", "-z", "--", dir]);
+  if (!files.ok) throw new Error(`git ls-files failed: ${files.out}`);
+  return files.out.split("\0").filter(Boolean).length;
+}
+
 export type RepoState = Readonly<{ commit_sha: string; repo_url: string }>;
 
 export function checkRepoReady(): RepoState {

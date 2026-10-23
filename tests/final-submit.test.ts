@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOKEN, cleanupTemp, commitAndPush, makeWorkspace, run, startFakeServer, ticket, type Workspace } from "./cli-harness.ts";
 
@@ -22,7 +22,10 @@ const shared = { FAKE_GH_COLLAB: "yes" };
 const submit = (env: Record<string, string>, ...flags: string[]) => run(ws, ["scripts/submit.ts", "--repo-url", REPO_URL, ...flags], env);
 
 function writeAndPush(files: Record<string, string | Uint8Array>): void {
-  Object.entries(files).forEach(([name, content]) => writeFileSync(join(ws.work, name), content));
+  Object.entries(files).forEach(([name, content]) => {
+    mkdirSync(join(ws.work, name, ".."), { recursive: true });
+    writeFileSync(join(ws.work, name), content);
+  });
   commitAndPush(ws.work);
 }
 
@@ -148,5 +151,49 @@ describe("FINAL video", () => {
     expect(result.code).toBe(1);
     expect(result.err).toContain("must be .mp4, .mov or .webm");
     expect(server.calls).toHaveLength(0);
+  });
+});
+
+describe("FINAL write-up sections and shared skills", () => {
+  const TEMPLATE = readFileSync(join(import.meta.dir, "..", "WRITEUP.md"), "utf8");
+  const withLink = (md: string) => md.replace(/^Video: *$/m, "Video: https://loom.com/share/abc123");
+
+  test("the shipped WRITEUP template has the required AI tools section and the optional skills section", () => {
+    expect(TEMPLATE).toMatch(/^## AI tools I use$/m);
+    expect(TEMPLATE).toMatch(/^## Skills I've built \(optional\)$/m);
+  });
+
+  test("an unfilled AI tools section warns but does not block", async () => {
+    writeAndPush({ "WRITEUP.md": withLink(TEMPLATE) });
+    const result = await submit(shared);
+    expect(result.code).toBe(0);
+    expect(result.err).toContain('"## AI tools I use" section of WRITEUP.md is empty');
+    expect(callsTo("/v1/submit")).toHaveLength(1);
+  });
+
+  test("a filled AI tools section gives no warning", async () => {
+    writeAndPush({ "WRITEUP.md": withLink(TEMPLATE).replace("## AI tools I use\n", "## AI tools I use\n\nClaude Code with Fable 5.1, plus Cursor for review.\n") });
+    const result = await submit(shared);
+    expect(result.code).toBe(0);
+    expect(result.err).not.toContain("AI tools I use");
+  });
+
+  test("a write-up with no AI tools heading warns", async () => {
+    const result = await submit(shared);
+    expect(result.code).toBe(0);
+    expect(result.err).toContain('has no "## AI tools I use" section');
+  });
+
+  test("sends the number of committed files under shared-skills/, zero when there are none", async () => {
+    await submit(shared);
+    expect(submitBody().shared_skills_count).toBe(0);
+  });
+
+  test("counts committed shared skills, including nested ones", async () => {
+    writeAndPush({ "shared-skills/review/SKILL.md": "# Review skill\n", "shared-skills/AGENTS.md": "# Rules\n", "shared-skills/cursor/rules.mdc": "rule\n" });
+    const result = await submit(shared);
+    expect(result.code).toBe(0);
+    expect(submitBody().shared_skills_count).toBe(3);
+    expect(result.out).toContain("Shared skills: 3 file(s)");
   });
 });

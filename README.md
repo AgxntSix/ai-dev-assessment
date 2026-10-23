@@ -123,7 +123,9 @@ bun run migrate --input <csv> [--apply] [--db <path>] [--report <path>]
 ## Deliverables
 
 1. **Source code** in your private repo, shared with `aiwithabidi` (step 1 above). Not a fork, and no pull requests to this repo.
-2. **`WRITEUP.md`** in the repo root. Write whatever best shows your thinking. Some sections that usually help: assumptions, problem analysis and approach, technical decisions and rationale, implementation details and challenges, and future improvements.
+2. **`WRITEUP.md`** in the repo root. Fill in the template. It asks for assumptions, analysis, decisions and rationale, challenges and future improvements.
+   - **AI tools I use (required):** a section on the tools, models and setups you use day to day and used here.
+   - **Skills I've built (optional):** any agent skills, rules or prompts you have made (Claude Code skills, Cursor rules, `AGENTS.md`), committed under `shared-skills/` or linked. We use them only to understand how you work. Leave out secrets and anything confidential to an employer or client.
 3. **Your agent trajectory.** Commit an export of your coding agent conversation to `transcripts/` as JSON, TXT or MD. In Claude Code, `/export` does this. Other tools have their own export.
 4. **A 5 to 7 minute video.** Walk us through your diagnosis, what you built and how you know it works. Record it however you like, then either upload the file from the terminal with `bun run submit --video <file>` (mp4, mov or webm, up to 500 MB), or put `Video: <link>` near the top of `WRITEUP.md` (Loom, unlisted YouTube, Drive). The final submit will not go through without one.
 
