@@ -108,7 +108,7 @@ bun run migrate --input <csv> [--apply] [--db <path>] [--report <path>]
 3. **A 5 to 7 minute video.** Walk us through your diagnosis, what you built, how you know it works, and anything else you think matters. Any link we can open works (Loom, YouTube unlisted, Drive).
 4. **Your agent trajectory.** Commit an export of your coding agent conversation to `transcripts/` as JSON, TXT or MD. In Claude Code, `/export` does this. Other tools have their own export.
 
-Keep `UPDATES.md` current as you go: one entry per ticket covering what you did, how you tested it, what's left and the decisions you made. When the final checkpoint asks, submit the video link through `bun run submit`, then email the repo link and the video link to both addresses above with the subject "AgxntSix AI assessment".
+Keep `UPDATES.md` current as you go: one entry per ticket covering what you did, how you tested it, what's left and the decisions you made. Put the video link at the top of `WRITEUP.md`, run `bun run submit` for the final checkpoint, then email the repo link and the video link to both addresses above with the subject "AgxntSix AI assessment".
 
 ## Recording and consent
 
