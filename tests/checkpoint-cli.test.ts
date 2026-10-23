@@ -41,7 +41,7 @@ describe("setup without a TTY", () => {
   test("--consent-hooks no starts the assessment without installing hooks", async () => {
     const result = await setup("--consent-hooks", "no");
     expect(result.code).toBe(0);
-    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN });
+    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN, hooks_consent: false });
     const candidate = JSON.parse(readFileSync(join(work, ".leadflow", "candidate.json"), "utf8"));
     expect(candidate.hooks_consent).toBe(false);
     expect(candidate.server_url).toBe(SERVER_URL);
@@ -52,14 +52,14 @@ describe("setup without a TTY", () => {
   test("reads the token from stdin with --token-stdin, keeping it off the command line", async () => {
     const result = await run(ws, ["scripts/setup.ts", "--token-stdin", "--server-url", SERVER_URL, "--consent-hooks", "no"], {}, `${TOKEN}\n`);
     expect(result.code).toBe(0);
-    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN });
+    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN, hooks_consent: false });
     expect(result.out + result.err).not.toContain(TOKEN);
   });
 
   test("reads the token from AGX_CANDIDATE_TOKEN", async () => {
     const result = await run(ws, ["scripts/setup.ts", "--server-url", SERVER_URL, "--consent-hooks", "no"], { AGX_CANDIDATE_TOKEN: TOKEN });
     expect(result.code).toBe(0);
-    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN });
+    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN, hooks_consent: false });
   });
 
   test("with no token anywhere, prints usage and calls nothing", async () => {
@@ -98,6 +98,7 @@ describe("setup without a TTY", () => {
   test("--consent-hooks yes installs the hooks", async () => {
     const result = await setup("--consent-hooks", "yes");
     expect(result.code).toBe(0);
+    expect(bodyOf("/v1/start")).toEqual({ candidate_token: TOKEN, hooks_consent: true });
     const settings = JSON.parse(readFileSync(join(work, ".claude", "settings.local.json"), "utf8"));
     expect(settings.hooks.PreToolUse[0].hooks[0].url).toBe(`${SERVER_URL}/v1/hooks`);
   });

@@ -17,11 +17,11 @@ Expect about 90 minutes of focused work in total. You have 48 hours from running
 1. Make a private copy of this repo in your own GitHub account. Do not fork it. From a terminal, with the [GitHub CLI](https://cli.github.com) logged in:
 
    ```
-   git clone https://github.com/AgxntSix/ai-dev-assessment leadflow-assessment
-   cd leadflow-assessment
+   git clone https://github.com/AgxntSix/ai-dev-assessment
+   cd ai-dev-assessment
    git remote remove origin
-   gh repo create leadflow-assessment --private --source . --push
-   gh api -X PUT repos/<your-github-user>/leadflow-assessment/collaborators/aiwithabidi -f permission=read
+   gh repo create ai-dev-assessment --private --source . --push
+   gh api -X PUT repos/<your-github-user>/ai-dev-assessment/collaborators/aiwithabidi -f permission=read
    ```
 
    The last command shares the repo with our reviewer account, `aiwithabidi`.

@@ -127,7 +127,7 @@ async function main(argv: readonly string[]): Promise<number> {
   }
   const hooksConsent = consentFlag ?? confirm("Install the recording hooks?");
 
-  const start = parseStart(await postJson(serverUrl, "/v1/start", { candidate_token: token }));
+  const start = parseStart(await postJson(serverUrl, "/v1/start", { candidate_token: token, hooks_consent: hooksConsent }));
   const ticket = parseTicket(start.ticket);
 
   const candidate: Candidate = {
