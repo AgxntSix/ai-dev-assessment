@@ -11,13 +11,20 @@ export function trackedFileCount(dir: string): number {
   return files.out.split("\0").filter(Boolean).length;
 }
 
+const SUBMIT_WRITTEN = ["answers/", "TICKETS/"];
+
 export type RepoState = Readonly<{ commit_sha: string; repo_url: string }>;
 
 export function checkRepoReady(): RepoState {
   const status = git(["status", "--porcelain"]);
   if (!status.ok) throw new Error(`git status failed: ${status.out}`);
   if (status.out !== "") {
-    throw new Error(`Your working tree has uncommitted changes. Commit or discard them first:\n${status.out}`);
+    const paths = status.out.split("\n").map((line) => line.slice(3).trim());
+    const fromSubmit = paths.filter((p) => SUBMIT_WRITTEN.some((dir) => p.startsWith(dir)));
+    const hint = fromSubmit.length
+      ? `\n${fromSubmit.join(", ")} ${fromSubmit.length === 1 ? "was" : "were"} written by setup or submit. They are part of your record: commit and push them too.`
+      : "";
+    throw new Error(`Your working tree has uncommitted changes. Commit or discard them first:\n${status.out}${hint}`);
   }
   const head = git(["rev-parse", "HEAD"]);
   if (!head.ok) throw new Error("This repo has no commits yet.");

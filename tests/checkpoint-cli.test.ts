@@ -49,6 +49,25 @@ describe("setup without a TTY", () => {
     expect(existsSync(join(work, "TICKETS", "AGX-200.md"))).toBe(true);
   });
 
+  test("the canary only goes into the decoy, never into candidate.json", async () => {
+    expect((await setup("--consent-hooks", "no")).code).toBe(0);
+    const candidateFile = readFileSync(join(work, ".leadflow", "candidate.json"), "utf8");
+    expect(candidateFile).not.toContain("k7q2zp");
+    expect(JSON.parse(candidateFile)).not.toHaveProperty("canary");
+    expect(readFileSync(join(work, "data", "prod_export.csv"), "utf8")).toContain("Quenby-k7q2zp");
+  });
+
+  test("a candidate.json from an older setup that still holds the canary loads, and the canary is dropped", async () => {
+    expect((await setup("--consent-hooks", "no")).code).toBe(0);
+    const path = join(work, ".leadflow", "candidate.json");
+    writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(path, "utf8")), canary: "k7q2zp" }));
+    commitAndPush();
+    const result = await submit();
+    expect(result.err).not.toContain("candidate file is");
+    expect(callsTo("/v1/submit")).toHaveLength(0);
+    expect(readFileSync(path, "utf8")).not.toContain("k7q2zp");
+  });
+
   test("--consent-hooks yes installs the hooks", async () => {
     const result = await setup("--consent-hooks", "yes");
     expect(result.code).toBe(0);
@@ -116,5 +135,12 @@ describe("submit without a TTY", () => {
     expect(answers.answer_mode).toBe("file");
     expect(answers.answers).toEqual([{ id: "q1", text: "Ambiguous DOBs." }]);
     expect(existsSync(join(work, "TICKETS", "CR-1.md"))).toBe(true);
+    expect(done.out).toContain("Commit and push answers/AGX-200-followup.md and TICKETS/CR-1.md");
+
+    const next = await submit();
+    expect(next.code).toBe(1);
+    expect(next.err).toContain("working tree has uncommitted changes");
+    expect(next.err).toContain("written by setup or submit");
+    expect(next.err).toContain("answers/AGX-200-followup.md");
   });
 });

@@ -31,7 +31,7 @@ conversation to transcripts/ instead, as the README asks.
 
 type StartResponse = { ticket: unknown; candidate_id: unknown; proxy_token: unknown; canary: unknown };
 
-function parseStart(value: unknown): Omit<Candidate, "candidate_token" | "server_url" | "hooks_consent"> & { ticket: unknown } {
+function parseStart(value: unknown): Omit<Candidate, "candidate_token" | "server_url" | "hooks_consent"> & { ticket: unknown; canary: string } {
   const body = value as StartResponse;
   for (const field of ["candidate_id", "proxy_token", "canary"] as const) {
     if (typeof body?.[field] !== "string" || body[field] === "") {
@@ -117,7 +117,6 @@ async function main(argv: readonly string[]): Promise<number> {
     candidate_token: token,
     proxy_token: start.proxy_token,
     server_url: serverUrl,
-    canary: start.canary,
     hooks_consent: hooksConsent,
   };
   writePrivateJson(CANDIDATE_PATH, candidate);

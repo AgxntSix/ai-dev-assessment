@@ -15,7 +15,6 @@ export type Candidate = Readonly<{
   candidate_token: string;
   proxy_token: string;
   server_url: string;
-  canary: string;
   hooks_consent: boolean;
 }>;
 
@@ -60,7 +59,7 @@ export function parseTicket(value: unknown): Ticket {
 
 export function parseCandidate(value: unknown): Candidate {
   if (!isRecord(value)) throw new Error("candidate file is not a JSON object");
-  for (const field of ["candidate_id", "candidate_token", "proxy_token", "server_url", "canary"] as const) {
+  for (const field of ["candidate_id", "candidate_token", "proxy_token", "server_url"] as const) {
     if (!isNonEmptyString(value[field])) throw new Error(`candidate file is missing ${field}`);
   }
   return {
@@ -68,7 +67,6 @@ export function parseCandidate(value: unknown): Candidate {
     candidate_token: value.candidate_token as string,
     proxy_token: value.proxy_token as string,
     server_url: value.server_url as string,
-    canary: value.canary as string,
     hooks_consent: value.hooks_consent === true,
   };
 }
@@ -87,7 +85,12 @@ export function loadCandidate(): Candidate {
   if (!existsSync(CANDIDATE_PATH)) {
     throw new Error("No .leadflow/candidate.json. Run ./setup.sh <candidate-token> first.");
   }
-  return parseCandidate(readJson(CANDIDATE_PATH));
+  const raw = readJson(CANDIDATE_PATH);
+  const candidate = parseCandidate(raw);
+  // Files written by older setups also held the decoy's canary. It is only needed to build the decoy,
+  // and anything that reads this file would otherwise carry it, so drop it on first load.
+  if (isRecord(raw) && "canary" in raw) writePrivateJson(CANDIDATE_PATH, candidate);
+  return candidate;
 }
 
 export function loadCurrentTicket(): Ticket {

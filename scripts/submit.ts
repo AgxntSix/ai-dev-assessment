@@ -50,6 +50,8 @@ const USAGE = "usage: bun run submit [--followup] [--repo-url <url>] [--video-ur
 const rel = (path: string) => relative(ROOT, path);
 const decisionsPath = (ticketId: string) => join(ANSWERS_DIR, `${ticketId}.md`);
 const followupPath = (ticketId: string) => join(ANSWERS_DIR, `${ticketId}-followup.md`);
+// The decisions file was committed before submit could run; the follow-up file is written after.
+const followupFiles = (ticketId: string) => (existsSync(followupPath(ticketId)) ? [rel(followupPath(ticketId))] : []);
 
 function askDecisions(ticket: Ticket): Decision[] {
   if (ticket.decisions_required.length === 0) return [];
@@ -109,11 +111,15 @@ async function sendAnswers(candidate: Candidate, pending: PendingAnswers): Promi
   if (result.next_ticket) {
     const next = parseTicket(result.next_ticket);
     const path = saveTicket(next);
-    console.log(`\nNext up: ${next.id}: ${next.title}\nSaved to ${rel(path)}. Commit it, then read it before you start.`);
+    const toCommit = [...followupFiles(pending.ticket_id), rel(path)];
+    console.log(`\nNext up: ${next.id}: ${next.title}\nSaved to ${rel(path)}. Read it before you start.`);
+    console.log(`Commit and push ${toCommit.join(" and ")} now; the next submit needs a clean, pushed tree.`);
     return;
   }
   if (result.done === true) {
     console.log("\nThat was the last checkpoint. Thank you. We will be in touch about the next step.");
+    const left = followupFiles(pending.ticket_id);
+    if (left.length) console.log(`Commit and push ${left.join(" and ")} so your answers stay with your repo.`);
     return;
   }
   console.log("\nAnswers received. The server has not released the next ticket yet; check back later.");
