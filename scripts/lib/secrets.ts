@@ -6,9 +6,10 @@ export const SCANNED_DIRS = ["transcripts/"];
 export const SCANNED_FILES = ["UPDATES.md", "DECISIONS.md", "WRITEUP.md"];
 
 // Real tokens are the prefix plus 43 base64url characters. Short look-alikes such as the
-// placeholders in tests/ are not secrets, so they must not block a submit. Hook tokens (ht) only
-// post telemetry, but a leaked one would let anyone write fake recordings under your name.
-const TOKEN_PATTERN = /agx_(?:ct|pt|ht)_[A-Za-z0-9_-]{20,}/;
+// placeholders in tests/ are not secrets, so they must not block a submit. Hook tokens (agx_ht_)
+// are left out on purpose: they can only post telemetry, so a session that read the hook settings
+// should not have to redact anything.
+const TOKEN_PATTERN = /agx_(?:ct|pt)_[A-Za-z0-9_-]{20,}/;
 
 export type TokenLeak = Readonly<{ file: string; line: number; kind: string }>;
 
