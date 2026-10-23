@@ -6,7 +6,11 @@ import { join } from "node:path";
 // checkpoint server and a fake `gh` on PATH. Nothing here touches the network or GitHub.
 
 const REPO = join(import.meta.dir, "..");
-export const TOKEN = "agx_ct_test";
+// Shaped like real tokens (prefix plus 43 base64url characters) but assembled at runtime, so this
+// file never contains a literal that submit's token scan would flag in a transcript that quotes it.
+export const realLookingToken = (kind: "ct" | "pt", body: string) => ["agx", kind, body.padEnd(43, "0")].join("_");
+export const TOKEN = realLookingToken("ct", "Q2FuZGlkYXRlVG9rZW5Gb3JUZXN0cw");
+export const PROXY_TOKEN = realLookingToken("pt", "UHJveHlUb2tlbkZvclRlc3Rz");
 
 export type Call = { path: string; method: string; body: unknown; headers: Record<string, string> };
 
@@ -47,7 +51,7 @@ export function startFakeServer(): FakeServer {
       const body = (await req.json()) as Record<string, unknown>;
       calls.push({ path, method: req.method, body, headers });
       const base = `http://localhost:${server.port}`;
-      if (path === "/v1/start") return Response.json({ ticket: ticket("AGX-200"), candidate_id: "cand_1", proxy_token: "agx_pt_x", canary: "k7q2zp" });
+      if (path === "/v1/start") return Response.json({ ticket: ticket("AGX-200"), candidate_id: "cand_1", proxy_token: PROXY_TOKEN, canary: "k7q2zp" });
       if (path === "/v1/submit") {
         const questions = body.ticket_id === "FINAL" ? [] : [{ id: "q1", text: "Which rows did you refuse to infer?" }];
         return Response.json({ submission_id: "sub_1", questions });

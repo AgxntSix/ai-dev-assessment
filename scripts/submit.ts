@@ -14,7 +14,7 @@ import {
 } from "./lib/answers-file.ts";
 import { askChoice, askRequired, confirm } from "./lib/ask.ts";
 import { FINAL_TICKET, FinalCheckError, SHARED_SKILLS_DIR, checkFinalRepo, resolveVideoUrl, writeupWarnings } from "./lib/final.ts";
-import { checkRepoReady, trackedFileCount, trackedFiles } from "./lib/git.ts";
+import { checkRepoReady, needsCommit, trackedFileCount, trackedFiles } from "./lib/git.ts";
 import { findTokenLeaks, leakMessage } from "./lib/secrets.ts";
 import {
   ANSWERS_DIR,
@@ -51,8 +51,9 @@ const USAGE = "usage: bun run submit [--followup] [--repo-url <url>] [--video-ur
 const rel = (path: string) => relative(ROOT, path);
 const decisionsPath = (ticketId: string) => join(ANSWERS_DIR, `${ticketId}.md`);
 const followupPath = (ticketId: string) => join(ANSWERS_DIR, `${ticketId}-followup.md`);
-// The decisions file was committed before submit could run; the follow-up file is written after.
-const followupFiles = (ticketId: string) => (existsSync(followupPath(ticketId)) ? [rel(followupPath(ticketId))] : []);
+// Files submit wrote that are not committed yet. The decisions file had to be committed before
+// submit could run; the follow-up file and the next ticket are written after it.
+const uncommitted = (paths: readonly string[]) => paths.filter((p) => existsSync(p) && needsCommit(p)).map(rel);
 
 function askDecisions(ticket: Ticket): Decision[] {
   if (ticket.decisions_required.length === 0) return [];
@@ -112,14 +113,14 @@ async function sendAnswers(candidate: Candidate, pending: PendingAnswers): Promi
   if (result.next_ticket) {
     const next = parseTicket(result.next_ticket);
     const path = saveTicket(next);
-    const toCommit = [...followupFiles(pending.ticket_id), rel(path)];
+    const toCommit = uncommitted([followupPath(pending.ticket_id), path]);
     console.log(`\nNext up: ${next.id}: ${next.title}\nSaved to ${rel(path)}. Read it before you start.`);
-    console.log(`Commit and push ${toCommit.join(" and ")} now; the next submit needs a clean, pushed tree.`);
+    if (toCommit.length) console.log(`Commit and push ${toCommit.join(" and ")} now; the next submit needs a clean, pushed tree.`);
     return;
   }
   if (result.done === true) {
     console.log("\nThat was the last checkpoint. Thank you. We will be in touch about the next step.");
-    const left = followupFiles(pending.ticket_id);
+    const left = uncommitted([followupPath(pending.ticket_id)]);
     if (left.length) console.log(`Commit and push ${left.join(" and ")} so your answers stay with your repo.`);
     return;
   }

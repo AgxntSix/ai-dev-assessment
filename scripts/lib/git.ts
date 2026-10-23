@@ -5,6 +5,13 @@ function git(args: readonly string[]): { ok: boolean; out: string } {
   return { ok: proc.exitCode === 0, out: proc.stdout.toString().trim() || proc.stderr.toString().trim() };
 }
 
+// True when the path is untracked or has changes that are not committed.
+export function needsCommit(path: string): boolean {
+  const status = git(["status", "--porcelain", "--", path]);
+  if (!status.ok) throw new Error(`git status failed: ${status.out}`);
+  return status.out !== "";
+}
+
 export function trackedFiles(): string[] {
   const files = git(["ls-files", "-z"]);
   if (!files.ok) throw new Error(`git ls-files failed: ${files.out}`);
