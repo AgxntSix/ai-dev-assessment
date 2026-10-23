@@ -22,6 +22,15 @@ Expect about 90 minutes of focused work in total. You have 48 hours from running
 
 You need [Bun](https://bun.sh) 1.4 or later and git. Use Claude Code, Cursor, Codex or anything else you like.
 
+### Working from your AI tool
+
+Your AI tool can run every command here, including setup and submit. Two things stay with you:
+
+- **Consent.** Run setup with your own answer: `./setup.sh <candidate-token> --consent-hooks yes` (or `no`). Without a terminal and without that flag, setup stops and asks for it.
+- **Decision answers.** Without a terminal, `bun run submit` writes `answers/<TICKET>.md` with one section per decision. Fill it in, commit, push and run submit again. If the server then asks follow-up questions, they land in `answers/<TICKET>-followup.md`; answer them there and run `bun run submit --followup`. We read these answers as yours, and we ask about them on the call.
+
+In Claude Code you can also type `! ./setup.sh <candidate-token>` or `! bun run submit` to run it yourself from your session. If it cannot prompt you there, it uses the file flow above.
+
 ## Rules
 
 These apply to every ticket. They are also in `RULES.md`.
