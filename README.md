@@ -125,11 +125,11 @@ bun run migrate --input <csv> [--apply] [--db <path>] [--report <path>]
 1. **Source code** in your private repo, shared with `aiwithabidi` (step 1 above). Not a fork, and no pull requests to this repo.
 2. **`WRITEUP.md`** in the repo root. Write whatever best shows your thinking. Some sections that usually help: assumptions, problem analysis and approach, technical decisions and rationale, implementation details and challenges, and future improvements.
 3. **Your agent trajectory.** Commit an export of your coding agent conversation to `transcripts/` as JSON, TXT or MD. In Claude Code, `/export` does this. Other tools have their own export.
-4. **A video, optional.** 5 to 7 minutes walking through your diagnosis, what you built and how you know it works. It is not required, but it helps us understand your thinking. Record it however you like, then either put `Video: <link>` near the top of `WRITEUP.md` (Loom, unlisted YouTube, Drive) or upload the file with `bun run submit --video <file>` (mp4, mov or webm, up to 500 MB).
+4. **A 5 to 7 minute video.** Walk us through your diagnosis, what you built and how you know it works. Record it however you like, then either upload the file from the terminal with `bun run submit --video <file>` (mp4, mov or webm, up to 500 MB), or put `Video: <link>` near the top of `WRITEUP.md` (Loom, unlisted YouTube, Drive). The final submit will not go through without one.
 
 Keep `UPDATES.md` current as you go: one entry per ticket covering what you did, how you tested it, what's left and the decisions you made.
 
-You do not need to email us. The final `bun run submit` sends everything: it checks that your repo is private and shared with `aiwithabidi`, then sends the repo link, your final commit and the video if you added one. Pass `--repo-url https://github.com/<owner>/<repo>` if your remote is not a GitHub URL.
+You do not need to email us. The final `bun run submit` sends everything: it checks that your repo is private and shared with `aiwithabidi`, then sends the repo link, your final commit and your video. Pass `--repo-url https://github.com/<owner>/<repo>` if your remote is not a GitHub URL.
 
 To check where you are at any point, ask your AI tool to call the `check_status` tool on our MCP server (`https://hiring.agxntsix.ai/mcp`).
 
@@ -143,6 +143,6 @@ If you use another tool, or say no to the hooks, the committed trajectory file i
 
 ## What happens after
 
-We read your code, `UPDATES.md`, `WRITEUP.md` and the video if you sent one, and run our checks against your final commit. If it is a fit, we book a 30-minute screen share: you walk us through one ticket, then we change a requirement and you re-decide it live.
+We read your code, `UPDATES.md`, `WRITEUP.md` and your video, and run our checks against your final commit. If it is a fit, we book a 30-minute screen share: you walk us through one ticket, then we change a requirement and you re-decide it live.
 
 Questions are welcome: `laura@agxntsix.ai`.

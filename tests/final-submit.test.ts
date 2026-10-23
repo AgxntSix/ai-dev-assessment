@@ -1,10 +1,13 @@
-import { afterAll, beforeEach, describe, expect, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOKEN, cleanupTemp, commitAndPush, makeWorkspace, run, startFakeServer, ticket, type Workspace } from "./cli-harness.ts";
 
 const REPO_URL = "https://github.com/cand/leadflow-work";
 const SHARE_COMMAND = "gh api -X PUT repos/cand/leadflow-work/collaborators/aiwithabidi -f permission=read";
+
+// Each test spawns several bun and git processes; the 5s default is too tight on a loaded machine.
+setDefaultTimeout(30_000);
 
 const server = startFakeServer();
 afterAll(() => {
@@ -28,7 +31,7 @@ beforeEach(async () => {
   ws = makeWorkspace();
   expect((await run(ws, ["scripts/setup.ts", TOKEN, "--server-url", server.url, "--consent-hooks", "no"])).code).toBe(0);
   writeFileSync(join(ws.work, ".leadflow", "ticket.json"), JSON.stringify(ticket("FINAL")));
-  writeAndPush({ "WRITEUP.md": "# Write-up\n\nAssumptions first.\n" });
+  writeAndPush({ "WRITEUP.md": "# Write-up\n\nVideo: https://loom.com/share/abc123\n\nAssumptions first.\n" });
   server.calls.length = 0;
 });
 
@@ -69,19 +72,21 @@ describe("FINAL repo checks", () => {
 });
 
 describe("FINAL video", () => {
-  test("submits without a video when none is given", async () => {
+  test("refuses to submit without a video", async () => {
+    writeAndPush({ "WRITEUP.md": "# Write-up\n\nAssumptions first.\n" });
     const result = await submit(shared);
-    expect(result.code).toBe(0);
-    expect(submitBody()).not.toHaveProperty("video_url");
-    expect(submitBody()).not.toHaveProperty("video_upload_id");
-    expect(result.out).toContain("last checkpoint");
+    expect(result.code).toBe(1);
+    expect(result.err).toContain("needs your 5 to 7 minute video");
+    expect(result.err).toContain("--video <file>");
+    expect(callsTo("/v1/submit")).toHaveLength(0);
   });
 
   test("sends the Video: link from the top of WRITEUP.md", async () => {
-    writeAndPush({ "WRITEUP.md": "# Write-up\n\nVideo: https://loom.com/share/abc123\n\nBody.\n" });
+    writeAndPush({ "WRITEUP.md": "# Write-up\n\nVideo: https://youtu.be/xyz789\n\nBody.\n" });
     const result = await submit(shared);
     expect(result.code).toBe(0);
-    expect(submitBody().video_url).toBe("https://loom.com/share/abc123");
+    expect(submitBody().video_url).toBe("https://youtu.be/xyz789");
+    expect(result.out).toContain("last checkpoint");
   });
 
   test("refuses a Video: line that is not a URL", async () => {
@@ -94,6 +99,7 @@ describe("FINAL video", () => {
 
   test("uploads a video file, retrying once after a server error, then submits its upload id", async () => {
     const bytes = new Uint8Array(3 * 1024 * 1024).map((_, i) => i % 251);
+    writeAndPush({ "WRITEUP.md": "# Write-up\n\nBody.\n" });
     const videoPath = join(ws.dir, "walkthrough.mp4");
     writeFileSync(videoPath, bytes);
     server.failNextPuts(1);
@@ -109,6 +115,7 @@ describe("FINAL video", () => {
     expect(callsTo("/v1/video/upload-url")[0]!.body).toEqual({ candidate_token: TOKEN, filename: "walkthrough.mp4", content_type: "video/mp4", size_bytes: bytes.length });
     expect(callsTo("/v1/video/complete")[0]!.body).toEqual({ candidate_token: TOKEN, upload_id: "up_1" });
     expect(submitBody().video_upload_id).toBe("up_1");
+    expect(submitBody()).not.toHaveProperty("video_url");
     expect(result.out).toContain("uploading video: 100%");
   });
 

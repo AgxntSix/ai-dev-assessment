@@ -158,7 +158,13 @@ function planFinal(flags: Flags, remoteUrl: string): FinalPlan {
   repo.warnings.forEach((w) => console.warn(`warning: ${w}`));
   const video = flags.video ? checkVideoFile(flags.video) : null;
   const video_url = resolveVideoUrl(flags.videoUrl);
-  if (!video && !video_url) console.log("No video attached. That is fine; it is optional.");
+  if (!video && !video_url) {
+    throw new FinalCheckError(
+      "The final checkpoint needs your 5 to 7 minute video. Either upload the file with " +
+        "`bun run submit --video <file>` (mp4, mov or webm, up to 500 MB), or add a `Video: <link>` line " +
+        "near the top of WRITEUP.md, commit, push and run bun run submit again.",
+    );
+  }
   return { repo_url: repo.repo_url, video_url, video };
 }
 

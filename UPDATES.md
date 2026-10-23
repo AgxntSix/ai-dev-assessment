@@ -60,4 +60,4 @@ _Not started._
 
 ### Video
 
-Optional. It helps us understand your thinking: put `Video: <link>` near the top of `WRITEUP.md`, or run `bun run submit --video <file>`.
+Required, 5 to 7 minutes. Upload it from the terminal with `bun run submit --video <file>`, or put `Video: <link>` near the top of `WRITEUP.md`.

@@ -1,7 +1,10 @@
-import { afterAll, beforeEach, describe, expect, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOKEN, cleanupTemp, commitAndPush as commitAndPushWs, makeWorkspace, run, startFakeServer, type Workspace } from "./cli-harness.ts";
+
+// Each test spawns several bun and git processes; the 5s default is too tight on a loaded machine.
+setDefaultTimeout(30_000);
 
 const server = startFakeServer();
 const SERVER_URL = server.url;
