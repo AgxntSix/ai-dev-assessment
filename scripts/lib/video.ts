@@ -95,6 +95,12 @@ export async function uploadVideo(candidate: Candidate, video: VideoFile, report
       report(`  upload failed (${(err as Error).message}); retrying once`);
     }
   }
-  await postJson(candidate.server_url, "/v1/video/complete", { candidate_token: candidate.candidate_token, upload_id: target.upload_id });
+  const complete = () =>
+    postJson(candidate.server_url, "/v1/video/complete", { candidate_token: candidate.candidate_token, upload_id: target.upload_id });
+  await complete().catch((err: unknown) => {
+    if (!retryable(err)) throw err;
+    report(`  confirming the upload failed (${(err as Error).message}); retrying once`);
+    return complete();
+  });
   return target.upload_id;
 }

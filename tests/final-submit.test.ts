@@ -119,6 +119,17 @@ describe("FINAL video", () => {
     expect(result.out).toContain("uploading video: 100%");
   });
 
+  test("retries the upload confirmation once when storage is briefly unavailable", async () => {
+    writeAndPush({ "WRITEUP.md": "# Write-up\n\nBody.\n" });
+    const videoPath = join(ws.dir, "walkthrough.mov");
+    writeFileSync(videoPath, new Uint8Array(4096));
+    server.failNextCompletes(1);
+    const result = await submit(shared, "--video", videoPath);
+    expect(result.code).toBe(0);
+    expect(callsTo("/v1/video/complete")).toHaveLength(2);
+    expect(submitBody().video_upload_id).toBe("up_1");
+  });
+
   test("does not submit when the upload fails twice", async () => {
     const videoPath = join(ws.dir, "walkthrough.webm");
     writeFileSync(videoPath, new Uint8Array(1024));

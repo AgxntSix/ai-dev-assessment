@@ -201,7 +201,7 @@ async function submit(candidate: Candidate, ticket: Ticket, mode: AnswerMode, fl
   const plan = isFinal ? planFinal(flags, repo.repo_url) : null;
   const repo_url = plan?.repo_url ?? repo.repo_url;
 
-  console.log(`\nSubmitting ${ticket.id} at ${repo.commit_sha.slice(0, 12)} from ${repo_url}. This locks the ticket.`);
+  console.log(`\nReady to submit ${ticket.id} at ${repo.commit_sha.slice(0, 12)} from ${repo_url}. Submitting locks the ticket.`);
   if (mode === "tty" && !confirm("Submit now?")) {
     console.log("Not submitted.");
     return EXIT_OK;

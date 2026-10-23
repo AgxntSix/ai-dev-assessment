@@ -21,12 +21,14 @@ export type FakeServer = Readonly<{
   url: string;
   calls: Call[];
   failNextPuts: (n: number) => void;
+  failNextCompletes: (n: number) => void;
   stop: () => void;
 }>;
 
 export function startFakeServer(): FakeServer {
   const calls: Call[] = [];
   let putFailures = 0;
+  let completeFailures = 0;
   const server = Bun.serve({
     port: 0,
     maxRequestBodySize: 64 * 1024 * 1024,
@@ -60,6 +62,10 @@ export function startFakeServer(): FakeServer {
           headers: { "Content-Type": String(body.content_type), "x-goog-content-length-range": `0,${body.size_bytes}` },
           expires_at: "2026-10-23T12:30:00Z",
         });
+      if (path === "/v1/video/complete" && completeFailures > 0) {
+        completeFailures--;
+        return Response.json({ error: "storage check failed" }, { status: 503 });
+      }
       if (path === "/v1/video/complete") return Response.json({ ok: true, upload_id: body.upload_id, size_bytes: 0 });
       return new Response("not found", { status: 404 });
     },
@@ -69,6 +75,9 @@ export function startFakeServer(): FakeServer {
     calls,
     failNextPuts: (n: number) => {
       putFailures = n;
+    },
+    failNextCompletes: (n: number) => {
+      completeFailures = n;
     },
     stop: () => server.stop(true),
   });
