@@ -14,7 +14,11 @@ const DECOY_PATH = join(ROOT, "data", "prod_export.csv");
 const CONSENT_TEXT = `
 Recording consent
 -----------------
-To see how you work with AI tools, we can install Claude Code hooks in this repo
+This job is mostly directing AI agents well, so we look at how you work, not just
+the final code: your prompts, what the agent did, and your calls on when to trust
+it. Good judgement there counts in your favour.
+
+To see it, we can install Claude Code hooks in this repo
 (.claude/settings.local.json, gitignored). While you use Claude Code inside this
 folder, they send each prompt, each tool call and its result, and session start
 and end events to the AgxntSix AI assessment server, tagged with a hook-only
