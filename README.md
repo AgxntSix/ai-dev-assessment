@@ -25,7 +25,7 @@ Expect about 90 minutes of focused work in total. You have 48 hours from running
    ```
 
    The last command shares the repo with our reviewer account, `aiwithabidi`. Do it now, before AGX-200, so we can see your repo from the start. The final submit checks it again.
-2. Apply through our MCP server at `https://hiring.agxntsix.ai/mcp`: your AI tool calls `get_application_password`, then `submit_application`, which returns your candidate token. Then run setup with it (see "Keep your token out of the conversation" below for the safe way inside an AI tool), for example `./setup.sh <candidate-token>` in a plain terminal. It confirms the server URL (press Enter for the default), shows what we record and asks for your consent, then saves your first ticket to `TICKETS/AGX-200.md`.
+2. Apply through our MCP server at `https://hiring.agxntsix.ai/mcp`: paste the link into your AI tool, answer its questions, and `submit_application` returns your candidate token. Then run setup with it (see "Keep your token out of the conversation" below for the safe way inside an AI tool), for example `./setup.sh <candidate-token>` in a plain terminal. It confirms the server URL (press Enter for the default), shows what we record and asks for your consent, then saves your first ticket to `TICKETS/AGX-200.md`.
 3. Work on the ticket. Commit and push to your private repo.
 4. Run `bun run submit`. It checks that everything is committed and pushed, sends your commit, your `UPDATES.md` entry for the ticket and a few short answers about your decisions, then asks two or three questions about the work. When you answer, the next ticket lands in `TICKETS/`.
 5. A ticket is locked once you submit it. Submit when you would be happy to ship.
