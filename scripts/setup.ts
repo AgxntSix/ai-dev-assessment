@@ -21,7 +21,7 @@ and end events to the AgxntSix AI assessment server, tagged with a hook-only
 token that can send recordings and nothing else.
 
 - Only Claude Code sessions in this repo are recorded. Nothing else on your machine.
-- The data is used only to assess your application and is deleted after 90 days.
+- The data is used only to assess your application and is deleted after one year.
 - The hooks never block you. If our server is down, your session carries on.
 - You can remove them at any time by deleting .claude/settings.local.json.
 
