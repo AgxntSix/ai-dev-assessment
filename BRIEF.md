@@ -26,7 +26,7 @@ The full rules are in `RULES.md`.
 ## ⏱️ How it runs
 - **One ticket at a time.** Change requests can land mid-way, like on a real project.
 - **About 90 minutes** of work inside a **48-hour window**. We look at how you budget time, not speed.
-- **Every `bun run submit`** asks a few short questions about your decisions. Answer in your own words.
+- **When a ticket is done:** commit, push and run `bun run submit`. It asks a few short questions about your decisions (answer in your own words), then the next ticket lands in `TICKETS/`.
 
 ## 🔍 What we look at
 1. **Your decisions and why**, in `UPDATES.md`.
