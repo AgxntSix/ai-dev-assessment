@@ -1,8 +1,10 @@
 # AgxntSix AI developer assessment
 
+> **📋 Start with [`BRIEF.md`](BRIEF.md):** one page on the scene, your role, what's at stake and the constraints.
+
 ## About us
 
-AgxntSix AI is an AI products studio. We build and ship AI operating systems for businesses: teams of AI agents that work inside a company's CRM, inbox and data, alongside the people who run it. Many of our clients are clinics and other healthcare businesses, so the data our agents touch is often protected health information (PHI). We treat that as an engineering constraint, not a legal footnote.
+AgxntSix AI is an AI services firm that helps companies build external-facing AI products or implement AI internally. Our team of product managers, designers and engineers helps clients decide what to build, then builds it, often as AI agents that work inside a company's CRM, inbox and data, alongside the people who run it. Many of our clients are clinics and other healthcare businesses, so the data our agents touch is often protected health information (PHI). We treat that as an engineering constraint, not a legal footnote.
 
 We hire engineers who understand the fundamentals and also use AI tools well. Shipping fast with an agent is easy. Shipping something a clinic can trust is the job.
 

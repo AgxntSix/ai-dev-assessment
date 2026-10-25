@@ -130,7 +130,7 @@ export function makeWorkspace(): Workspace {
   writeFileSync(join(bin, "gh"), FAKE_GH);
   chmodSync(join(bin, "gh"), 0o755);
   sh(dir, ["git", "init", "-q", "--bare", "remote.git"]);
-  for (const name of ["scripts", "package.json", ".gitignore", "UPDATES.md"]) cpSync(join(REPO, name), join(work, name), { recursive: true });
+  for (const name of ["scripts", "package.json", ".gitignore", "UPDATES.md", "BRIEF.md"]) cpSync(join(REPO, name), join(work, name), { recursive: true });
   const updates = readFileSync(join(work, "UPDATES.md"), "utf8")
     .replace("## AGX-200\n\n_Not started._", "## AGX-200\n\nMigration with dry run.")
     .replace("## FINAL\n\n_Not started._", "## FINAL\n\nWrite-up done.");

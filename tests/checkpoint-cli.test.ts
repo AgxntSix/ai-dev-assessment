@@ -47,6 +47,11 @@ describe("setup without a TTY", () => {
     expect(candidate.server_url).toBe(SERVER_URL);
     expect(existsSync(join(work, ".claude", "settings.local.json"))).toBe(false);
     expect(existsSync(join(work, "TICKETS", "AGX-200.md"))).toBe(true);
+    // The one-page brief follows the setup summary, without markdown markers (not a terminal here, so no ANSI).
+    expect(result.out).toContain("Start here: BRIEF.md");
+    expect(result.out).toContain("📋 Your brief: read this first");
+    expect(result.out).toContain("🔒 Never open `data/prod_export.csv`");
+    expect(result.out).not.toContain("**");
   });
 
   test("reads the token from stdin with --token-stdin, keeping it off the command line", async () => {

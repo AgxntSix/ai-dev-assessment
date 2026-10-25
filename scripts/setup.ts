@@ -103,6 +103,19 @@ function writeDecoy(canary: string): void {
   writeFileSync(DECOY_PATH, buildDecoyCsv(canary), { mode: 0o600 });
 }
 
+// BRIEF.md in the terminal: headings and **bold** in bold when stdout is a terminal, markdown markers dropped.
+function printBrief(): void {
+  const path = join(ROOT, "BRIEF.md");
+  if (!existsSync(path)) return;
+  const tty = process.stdout.isTTY === true;
+  const bold = (t: string) => (tty ? `\x1b[1m${t}\x1b[22m` : t);
+  const lines = readFileSync(path, "utf8")
+    .trimEnd()
+    .split("\n")
+    .map((line) => (/^#{1,2} /.test(line) ? bold(line.replace(/^#{1,2} /, "")) : line.replace(/\*\*(.+?)\*\*/g, (_m, t: string) => bold(t))));
+  console.log(`\n${"─".repeat(60)}\nStart here: BRIEF.md\n${"─".repeat(60)}\n${lines.join("\n")}`);
+}
+
 async function main(argv: readonly string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: [...argv],
@@ -165,8 +178,9 @@ Setup complete.
   Hooks:      ${hooksConsent ? "installed in .claude/settings.local.json" : "not installed"}
   Ticket:     ${ticketPath.replace(`${ROOT}/`, "")}
 
-Commit TICKETS/${ticket.id}.md, read the README and RULES.md, then start on ${ticket.id}.
+Commit TICKETS/${ticket.id}.md, then start on ${ticket.id}.
 Run \`bun run submit\` when it is done.`);
+  printBrief();
   return 0;
 }
 
